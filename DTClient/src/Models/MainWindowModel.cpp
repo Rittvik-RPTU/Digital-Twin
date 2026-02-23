@@ -113,10 +113,10 @@ namespace DigitalTwin::Client {
         ProjectViewModel->clearAllElements();
         DigitalTwinMap.clear();
         ProjectViewModel->setProjects(Projects);
-        for(const auto& project : Projects) {
-            auto digitalTwins = BackendCommunication->getAllDigitalTwinsForProjectWithId(project->getId());
+        //for(const auto& project : Projects) {
+            //auto digitalTwins = BackendCommunication->getAllDigitalTwinsForProjectWithId(project->getId());
 //            ProjectViewModel->setDigitalTwinForProjectWithId(project, digitalTwins);
 //            DigitalTwinMap.emplace(project->getId(),digitalTwins);
-        }
+        //}
     }
 }
