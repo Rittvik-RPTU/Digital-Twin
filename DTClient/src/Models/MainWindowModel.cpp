@@ -22,6 +22,7 @@
 #include "Markdown/MarkdownParser.h"
 
 #include "MqttConnectionThread.h"
+#include "entities/DigitalTwin.h"
 
 
 namespace DigitalTwin::Client {
@@ -85,8 +86,8 @@ namespace DigitalTwin::Client {
 
         auto possibleDigitalTwin = item->getDigitalTwin();
         if(possibleDigitalTwin != nullptr){
-            // auto model = DigitalTwinManager->addDigitalTwinAndCreateModel(possibleDigitalTwin);
-            // MainWindow->addTabWidget(new DigitalTwinTabWidget(model,MainWindow),QString::fromStdString(possibleDigitalTwin->getName()));
+            auto model = DigitalTwinManager->addDigitalTwinAndCreateModel(possibleDigitalTwin);
+            MainWindow->addTabWidget(new DigitalTwinTabWidget(model,MainWindow),QString::fromStdString(possibleDigitalTwin->getName()));
         } else if(item->getProject() != nullptr) {
             auto project = item->getProject();
             UploadProjectFileToBackend* uploadFileDialog = new UploadProjectFileToBackend(BackendCommunication, MainWindow);
