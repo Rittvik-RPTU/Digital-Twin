@@ -70,7 +70,7 @@ namespace DigitalTwin::Client {
         ViewModels::ProjectTreeViewModel *ProjectViewModel;
         BACKEND_COMMUNICATION::CommunicationService *BackendCommunication = nullptr;
         MQTTConnectionThread* ConnectionThread = nullptr;
-        std::map<boost::uuids::uuid,std::vector<SysMLv2::REST::DigitalTwin*>> DigitalTwinMap;
+        std::map<boost::uuids::uuid,std::vector<std::shared_ptr<SysMLv2::REST::DigitalTwin>>> DigitalTwinMap;
         DigitalTwin::DigitalTwinManager* DigitalTwinManager = nullptr;
         std::vector<std::shared_ptr<SysMLv2::REST::Project>> Projects;
     };

@@ -14,7 +14,12 @@
 #include "../DigitalTwinManager.h"
 #include "entities/DigitalTwin.h"
 #include <kerml/root/annotations/TextualRepresentation.h>
+#include <sysmlv2/rest/entities/Commit.h>
 #include <sysmlv2/rest/entities/IEntity.h>
+#include <sysmlv2/rest/entities/Project.h>
+#include <sysmlv2/Parser.h>
+
+#include "Entities/Port.h"
 
 namespace DigitalTwin::Model {
     DigitalTwinModel::DigitalTwinModel(std::shared_ptr<SysMLv2::REST::DigitalTwin> digitalTwin, DigitalTwinManager *manager) :
@@ -30,26 +35,19 @@ namespace DigitalTwin::Model {
     }
 
     void DigitalTwinModel::generateDigitalTwinBackend() {
-        auto allElements = Manager->downloadDigitalTwinModel(DigitalTwin->parentProjectId(), DigitalTwin->commitId());
-
-        for(const auto item : DigitalTwin->getConnectedModels())
-            for(const auto &elem : allElements)
-                if(item==elem->getId())
-                    DigitalTwinModelElements.push_back(elem);
+        DigitalTwinModelElements = Manager->downloadDigitalTwinModel(DigitalTwin->owningProject()->getId(), DigitalTwin->referencedCommit()->getId());
 
         std::string completeModel;
 
         for(const auto &elem : DigitalTwinModelElements)
-            completeModel+=std::dynamic_pointer_cast<KerML::Entities::TextualRepresentation>(elem)->body();
+            if (std::dynamic_pointer_cast<KerML::Entities::TextualRepresentation>(elem)->language()!="Markdown")
+                completeModel+=std::dynamic_pointer_cast<KerML::Entities::TextualRepresentation>(elem)->body();
 
-        //auto digitalTwinElements = SysMLv2::Files::Parser::parseSysMLv2(completeModel);
+        auto digitalTwinElements = SysMLv2::Files::Parser::parseSysMLv2(completeModel);
 
-        // for(auto dtElement : digitalTwinElements) {
-            // if(dynamic_cast<Component*>(dtElement) != nullptr)
-                // ComponentMap.insert(std::make_pair(dtElement->getName(),dtElement));
-            // if(dynamic_cast<Port*>(dtElement) != nullptr)
-                // PortMap.insert(std::make_pair(dtElement->getName(), dtElement));
-        // }
+        for(auto dtElement : digitalTwinElements.first) {
+            //TODO Needs Fixing
+        }
     }
 
     std::string DigitalTwinModel::digitalTwinName() {

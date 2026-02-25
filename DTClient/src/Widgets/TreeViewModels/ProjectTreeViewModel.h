@@ -32,7 +32,7 @@ namespace DigitalTwin::Client::ViewModels {
         int columnCount(const QModelIndex &parent = {}) const override;
 
         void setProjects(std::vector<std::shared_ptr<SysMLv2::REST::Project>> projects);
-        void setDigitalTwinForProjectWithId(SysMLv2::REST::Project* project, std::vector<SysMLv2::REST::DigitalTwin*> twins);
+        void setDigitalTwinForProjectWithId(std::shared_ptr<SysMLv2::REST::Project> project, std::vector<std::shared_ptr<SysMLv2::REST::DigitalTwin>> twins);
         ProjectTreeViewItem* getProjectTreeViewItemFromIndex(const QModelIndex& index) const;
 
         void clearAllElements();
