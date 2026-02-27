@@ -3,7 +3,7 @@
 **/build/**
 **/CMakeUserPresets.json
 **/3rd_party_conanpackages/**
-.idea/
+.idea/**
 **/cmake-**/**
 CMakeUserPresets.json
 CMakePresets.json

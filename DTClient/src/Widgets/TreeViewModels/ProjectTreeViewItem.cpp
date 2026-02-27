@@ -5,7 +5,8 @@
 #include "ProjectTreeViewItem.h"
 
 #include <sysmlv2/rest/entities/Project.h>
-//#include "AGILABackendImplementation/DigitalTwin.h"
+
+#include "entities/DigitalTwin.h"
 #include <algorithm>
 #include <memory>
 
@@ -16,7 +17,7 @@ namespace DigitalTwin::Client::ViewModels {
     Parent(nullptr)
     {     }
 
-    ProjectTreeViewItem::ProjectTreeViewItem(SysMLv2::REST::DigitalTwin *digitalTwin, ProjectTreeViewItem *parent) :
+    ProjectTreeViewItem::ProjectTreeViewItem(std::shared_ptr<SysMLv2::REST::DigitalTwin>  digitalTwin, ProjectTreeViewItem *parent) :
         ProjectData(nullptr),
         DigitalTwinData(digitalTwin),
         Parent(parent)
@@ -44,7 +45,7 @@ namespace DigitalTwin::Client::ViewModels {
         if(ProjectData != nullptr)
             return QVariant(QString::fromStdString(ProjectData->getName()));
         if(DigitalTwinData != nullptr)
-            return QVariant(QString::fromStdString("DigitalTwinData->getName()"));
+            return QVariant(QString::fromStdString(DigitalTwinData->getName()));
         return QVariant("Projects");
     }
 
@@ -72,7 +73,7 @@ namespace DigitalTwin::Client::ViewModels {
         ChildItems.push_back(new ProjectTreeViewItem(project,this));
     }
 
-    void ProjectTreeViewItem::appendDigitalTwin(SysMLv2::REST::DigitalTwin *digitalTwin) {
+    void ProjectTreeViewItem::appendDigitalTwin(std::shared_ptr<SysMLv2::REST::DigitalTwin>  digitalTwin) {
         ChildItems.push_back(new ProjectTreeViewItem(digitalTwin, this));
     }
 
@@ -83,7 +84,7 @@ namespace DigitalTwin::Client::ViewModels {
         ChildItems.clear();
     }
 
-    SysMLv2::REST::DigitalTwin *ProjectTreeViewItem::getDigitalTwin() const {
+    std::shared_ptr<SysMLv2::REST::DigitalTwin>  ProjectTreeViewItem::getDigitalTwin() const {
         return DigitalTwinData;
     }
 

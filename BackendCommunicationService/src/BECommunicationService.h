@@ -16,6 +16,7 @@
 // Internal Classes
 //---------------------------------------------------------
 #include "cpp_backend_communication_global.h"
+#include "entities/TwinRequest.h"
 //---------------------------------------------------------
 // Forwarding
 //---------------------------------------------------------
@@ -23,8 +24,10 @@ namespace SysMLv2 {
     namespace REST {
         class IEntity;
         class Commit;
+        class CommitRequest;
         class Branch;
         class Project;
+        class ProjectRequest;
         class DigitalTwin;
     }
 
@@ -130,7 +133,7 @@ namespace BACKEND_COMMUNICATION {
          * @param commit 
          * @return 
          */
-        std::shared_ptr<SysMLv2::REST::Commit> postCommitWithId(boost::uuids::uuid projectId, std::shared_ptr<SysMLv2::REST::Commit> commit);
+        std::shared_ptr<SysMLv2::REST::Commit> postCommitWithId(boost::uuids::uuid projectId, std::shared_ptr<SysMLv2::REST::CommitRequest> commit);
 
 
         /**
@@ -155,7 +158,7 @@ namespace BACKEND_COMMUNICATION {
          * @param digitalTwin
          * @return
          */
-        std::shared_ptr<SysMLv2::REST::DigitalTwin> postDigitalTwin(std::shared_ptr<SysMLv2::REST::DigitalTwin> digitalTwin, boost::uuids::uuid projectId);
+        std::shared_ptr<SysMLv2::REST::DigitalTwin> postDigitalTwin(std::shared_ptr<SysMLv2::REST::TwinRequest> digitalTwin, boost::uuids::uuid projectId);
 
     private:
         std::string REST_Protocol = "http://";

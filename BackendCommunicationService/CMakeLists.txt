@@ -8,7 +8,9 @@ add_library(BackendCommunication
         src/BECommunicationService.cpp
         src/cpp_backend_communication_global.h
         src/entities/DigitalTwin.cpp
-        src/entities/DigitalTwin.h)
+        src/entities/DigitalTwin.h
+        src/entities/TwinRequest.cpp
+        src/entities/TwinRequest.h)
 
 target_link_libraries(BackendCommunication
         CURL::libcurl

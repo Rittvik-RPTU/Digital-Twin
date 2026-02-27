@@ -23,6 +23,13 @@
 //---------------------------------------------------------
 #include "BECommunicationService.h"
 
+#include <nlohmann/json.hpp>
+#include <sysmlv2/service/online/SysMLAPIImplementation.h>
+#include <sysmlv2/rest/entities/CommitRequest.h>
+#include <sysmlv2/rest/entities/ProjectRequest.h>
+
+#include "entities/DigitalTwin.h"
+
 
 namespace BACKEND_COMMUNICATION {
     CommunicationService::CommunicationService(std::string serverAddress, unsigned int port, std::string serverFolder) :
@@ -65,13 +72,15 @@ namespace BACKEND_COMMUNICATION {
         return nullptr;
     }
 
-    std::vector<std::shared_ptr<SysMLv2::REST::DigitalTwin>> CommunicationService::getAllDigitalTwinsForProjectWithId(boost::uuids::uuid ) {
-//        auto twins = APIImplementation->getAllDigitalTwinsForProject(boost::lexical_cast<std::string>(projectId),BarrierString);
+    std::vector<std::shared_ptr<SysMLv2::REST::DigitalTwin>> CommunicationService::getAllDigitalTwinsForProjectWithId(boost::uuids::uuid projectId) {
+        auto twinString = APIImplementation->getCustomRequest("projects/" + boost::lexical_cast<std::string>(projectId) + "/twins",BarrierString);
         std::vector<std::shared_ptr<SysMLv2::REST::DigitalTwin>> returnValue;
-
-//        for(auto oldTwin : twins)
-//            returnValue.push_back(dynamic_cast<SysMLv2::Entities::DigitalTwin*>(oldTwin));
-
+        nlohmann::json json = nlohmann::json::parse(twinString);
+        std::vector<nlohmann::json> arrayValues = json.get<std::vector<nlohmann::json>>();
+        returnValue.reserve(arrayValues.size());
+        for(const nlohmann::json& elem : arrayValues) {
+            returnValue.emplace_back(std::make_shared<SysMLv2::REST::DigitalTwin>(elem.dump()));
+        }
         return returnValue;
     }
 
@@ -81,7 +90,7 @@ namespace BACKEND_COMMUNICATION {
     }
 
     std::shared_ptr<SysMLv2::REST::Commit> CommunicationService::postCommitWithId(boost::uuids::uuid projectId,
-                                                                                      std::shared_ptr<SysMLv2::REST::Commit> commit)
+                                                                                      std::shared_ptr<SysMLv2::REST::CommitRequest> commit)
     {
         auto commi = APIImplementation->postCommit(boost::lexical_cast<std::string>(projectId), commit, BarrierString);
 
@@ -95,12 +104,12 @@ namespace BACKEND_COMMUNICATION {
         return !BarrierString.empty();
     }
 
-    std::shared_ptr<SysMLv2::REST::DigitalTwin> CommunicationService::postDigitalTwin(std::shared_ptr<SysMLv2::REST::DigitalTwin> ,
-	    boost::uuids::uuid )
+    std::shared_ptr<SysMLv2::REST::DigitalTwin> CommunicationService::postDigitalTwin(std::shared_ptr<SysMLv2::REST::TwinRequest> digitalTwin,
+	    boost::uuids::uuid projectId)
     {
-//        auto digitalT = APIImplementation->postDigitalTwin(boost::lexical_cast<std::string>(projectId), digitalTwin, BarrierString);
+        auto digitalT = APIImplementation->postCustomRequest("projects/" + boost::lexical_cast<std::string>(projectId) + "/twins", digitalTwin->serializeToJson(), BarrierString);
 
-        std::shared_ptr<SysMLv2::REST::DigitalTwin> returnValue = nullptr;
+        auto returnValue = std::make_shared<SysMLv2::REST::DigitalTwin>(digitalT);
         return returnValue;
     }
 
@@ -115,7 +124,7 @@ namespace BACKEND_COMMUNICATION {
         return returnValue;
     }
 
-    std::vector<std::shared_ptr<KerML::Entities::Element >>
+    std::vector<std::shared_ptr<KerML::Entities::Element>>
     CommunicationService::getAllElementsOfCommit(boost::uuids::uuid projectId, boost::uuids::uuid commitId) {
         auto elements = APIImplementation->getAllElementsFromCommit(boost::lexical_cast<std::string>(projectId),boost::lexical_cast<std::string>(commitId), BarrierString);
         std::vector<std::shared_ptr<KerML::Entities::Element>> returnValue;
@@ -128,8 +137,8 @@ namespace BACKEND_COMMUNICATION {
 
     std::shared_ptr<SysMLv2::REST::Project>
     CommunicationService::postProject(std::string projectName, std::string projectDescription, std::string defaultBranchName) {
-        std::shared_ptr<SysMLv2::REST::Project> project = std::make_shared<SysMLv2::REST::Project>(projectName,projectDescription, defaultBranchName);
-        project = std::dynamic_pointer_cast<SysMLv2::REST::Project>(APIImplementation->postProject(project, BarrierString));
+        auto projectRequest = std::make_shared<SysMLv2::REST::ProjectRequest>(projectName,projectDescription, defaultBranchName);
+        auto project = std::dynamic_pointer_cast<SysMLv2::REST::Project>(APIImplementation->postProject(projectRequest, BarrierString));
         return project;
     }
 

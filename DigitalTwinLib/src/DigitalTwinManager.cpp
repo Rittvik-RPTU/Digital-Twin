@@ -14,6 +14,7 @@
 #include <boost/uuid.hpp>
 #include <MQTT/Topics.h>
 #include <iostream>
+#include <sysmlv2/rest/entities/Project.h>
 
 namespace DigitalTwin {
 
@@ -53,7 +54,7 @@ namespace DigitalTwin {
     Model::DigitalTwinModel* DigitalTwinManager::addDigitalTwinAndCreateModel(std::shared_ptr<SysMLv2::REST::DigitalTwin> digitalTwin) {
         Model::DigitalTwinModel* returnValue = new Model::DigitalTwinModel(digitalTwin,this);
         DigitalTwinModelMap.insert(std::make_pair(digitalTwin->getId(),returnValue));
-        PHYSICAL_TWIN_COMMUNICATION::DigitalTwinEntity entity(digitalTwin->getId(), digitalTwin->parentProjectId());
+        PHYSICAL_TWIN_COMMUNICATION::DigitalTwinEntity entity(digitalTwin->getId(), digitalTwin->owningProject()->getId());
         ClientService->publish(PHYSICAL_TWIN_COMMUNICATION::CONNECT_TO_TWIN, entity.serialize());
         return returnValue;
     }
