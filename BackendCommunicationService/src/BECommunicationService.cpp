@@ -40,7 +40,11 @@ namespace BACKEND_COMMUNICATION {
         if(Port==443)
             REST_Protocol="https://";
 
-        APIImplementation = new SysMLv2::API::SysMLAPIImplementation(REST_Protocol + ServerAddress + ":" + std::to_string(Port) + "/");
+        if ((Port!=443)&&(Port!=80))
+            APIImplementation = new SysMLv2::API::SysMLAPIImplementation(REST_Protocol + ServerAddress + ":" + std::to_string(Port) + "/");
+        else
+            APIImplementation = new SysMLv2::API::SysMLAPIImplementation(REST_Protocol + ServerAddress);
+
     }
 
     CommunicationService::CommunicationService(std::string serverAddress, std::string serverFolder) {

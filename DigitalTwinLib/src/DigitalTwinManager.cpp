@@ -36,10 +36,8 @@ namespace DigitalTwin {
 
             for (auto digitalTwin: digitalTwins)
                 if (digitalTwin->getId() == digitalTwinId) {
-                    std::cout<<"Found DT: "<<digitalTwin->getName() << std::endl;
                     auto returnValue = new Model::DigitalTwinModel(digitalTwin, this);
                     DigitalTwinModelMap.insert(std::make_pair(digitalTwin->getId(), returnValue));
-                    std::cout<<"Generate MQTT Interface"<<std::endl;
                     generateMQTTInterface(returnValue);
                 }
         } catch(SysMLv2::API::EXCEPTIONS::HTTPException& ex) {
