@@ -38,8 +38,6 @@ namespace DigitalTwin::Client {
 
     private slots:
         void onTextEdited();
-        void onActionUploadClicked();
-        void onActionDownloadClicked();
         void onCreateDigitalTwinClicked();
 
     private:

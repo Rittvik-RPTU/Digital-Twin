@@ -21,11 +21,12 @@
 #include <boost/asio/strand.hpp>
 
 #include "../cpp_physical_twin_communication_global.h"
+#include "IMqttClientService.h"
 
 using client_t = async_mqtt::client<async_mqtt::protocol_version::v5,async_mqtt::protocol::mqtt>;
 
 namespace PHYSICAL_TWIN_COMMUNICATION {
-    class CPPPHYSICALTWINCOMMUNICATION_EXPORT MqttClientService {
+    class CPPPHYSICALTWINCOMMUNICATION_EXPORT MqttClientService : public IMqttClientService {
     public:
         /**
          * Deleted, because this is not needed!
@@ -43,7 +44,8 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
         void start();
         void stop();
 
-        void publish(std::string topic, std::string payload, async_mqtt::qos qos=async_mqtt::qos::at_most_once);
+        void publish(std::string topic, std::string payload) override;
+        void publish(std::string topic, std::string payload, async_mqtt::qos qos);
         std::future<std::string> request(std::string topic, std::string payload, std::string respTopic);
 
         void subscribe(std::string topic, std::function<void(std::string topic, std::string payload)> callback);

@@ -70,6 +70,7 @@ class CppDigitalTwinRecipe(ConanFile):
 
         self.options["qt/*"].qtcharts = True
         self.options["qt/*"].qthttpserver = True
+        self.options["qt/*"].qtmqtt = True
 
     
     def layout(self):
