@@ -5,7 +5,6 @@
 #ifndef DIGITALTWIN_MARKDOWNPARSER_H
 #define DIGITALTWIN_MARKDOWNPARSER_H
 
-#include "Elements/IMarkdownElement.h"
 #include "CommonmarkParser/cmark.h"
 
 #include <QString>

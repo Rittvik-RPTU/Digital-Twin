@@ -20,7 +20,8 @@
 #include <boost/asio/use_awaitable.hpp>
 
 namespace PHYSICAL_TWIN_COMMUNICATION {
-    MqttClientService::MqttClientService(std::string server, std::string port, std::string clientId) : KeepAlive(60),
+    MqttClientService::MqttClientService(boost::asio::io_context* ioc, std::string server, std::string port, std::string clientId) : KeepAlive(60),
+        Strand(ioc->get_executor()),
         Client(Strand),
         ClientStarted(false),
         Connected(std::atomic<bool>(false)) {
@@ -101,8 +102,12 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
                 props.emplace_back(async_mqtt::property::response_topic{resp_topic});
                 props.emplace_back(async_mqtt::property::correlation_data{corr_key});
                 const auto package = async_mqtt::v5::publish_packet{
-                        req_topic, req_payload, async_mqtt::qos::at_most_once, async_mqtt::properties{async_mqtt::force_move(props)}
-                    };
+                    req_topic,
+                    req_payload,
+                    async_mqtt::qos::at_most_once,
+                    async_mqtt::force_move(props)
+                };
+
                 co_await Client.async_publish(
                     std::move(package),
                     boost::asio::use_awaitable_t<boost::asio::any_io_executor>{}
@@ -112,6 +117,43 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
         });
 
         return fut;
+    }
+
+    void MqttClientService::subscribe(std::string topic, std::function<void(std::string topic, std::string payload)> callback) {
+        boost::asio::post(Strand, [this, topic = std::move(topic), callback = std::move(callback)]() mutable {
+
+            Callbacks[topic] = std::move(callback);
+
+            if (!Connected) return;
+
+            boost::asio::co_spawn(
+                Strand,
+                [this, topic]() -> boost::asio::awaitable<void, boost::asio::any_io_executor> {
+
+                    auto pid =
+                        co_await Client.async_acquire_unique_packet_id_wait_until(
+                            boost::asio::use_awaitable_t<boost::asio::any_io_executor>{});
+
+                    if (!pid) co_return;
+
+                    std::vector<async_mqtt::topic_subopts> entries{
+                        {topic, async_mqtt::qos::at_most_once}
+                    };
+
+                    co_await Client.async_subscribe(
+                        async_mqtt::v5::subscribe_packet{
+                            pid,
+                            async_mqtt::force_move(entries)
+                        },
+                        boost::asio::use_awaitable_t<boost::asio::any_io_executor>{}
+                    );
+
+                    co_return;
+                },
+                boost::asio::detached
+            );
+        }
+    );
     }
 
     boost::asio::awaitable<void> MqttClientService::run() {

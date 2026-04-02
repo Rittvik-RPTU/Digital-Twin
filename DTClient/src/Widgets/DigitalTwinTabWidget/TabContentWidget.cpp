@@ -46,7 +46,8 @@ namespace DigitalTwin::Client {
             InternalStatus = LineView;
             ui->ToggleViewButton->setText(tr("Toggle to Table"));
             ui->stackedWidget->widget(InternalStatus);
-        }else if(InternalStatus == LineView) {
+        }
+        else if(InternalStatus == LineView) {
             InternalStatus = TableView;
             ui->ToggleViewButton->setText(tr("Toggle to Diagram"));
             ui->stackedWidget->widget(InternalStatus);

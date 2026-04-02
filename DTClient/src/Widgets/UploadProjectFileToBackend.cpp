@@ -18,6 +18,8 @@
 #include <kerml/root/elements/Element.h>
 #include <kerml/root/annotations/TextualRepresentation.h>
 #include <memory>
+
+#include "entities/TwinRequest.h"
 //#include "AGILABackendImplementation/DigitalTwin.h"
 
 namespace DigitalTwin::Client {
@@ -114,8 +116,8 @@ namespace DigitalTwin::Client {
         dialog.exec();
         if(dialog.result()==QDialog::DialogCode::Accepted) {
             Project = CommunicationService->postProject(dialog.getProjectName(), dialog.getProjectDecription(), "Main");
-//            Elements = Parser->getElementsOfProject();
-            //Commit = std::make_shared<SysMLv2::REST::Commit>(dialog.getProjectName(), dialog.getProjectDecription(), Project);
+            // Elements = Parser->getElementsOfProject();
+            // Commit = std::make_shared<SysMLv2::REST::Commit>(dialog.getProjectName(), dialog.getProjectDecription(), Project);
 
             std::vector<std::shared_ptr<SysMLv2::REST::DataVersion>> dataVersions;
 //            for (const auto& element : Elements)
@@ -125,7 +127,7 @@ namespace DigitalTwin::Client {
 //            }
 
             Commit->setChange(dataVersions);
-            CommunicationService->postCommitWithId(Project->getId(), Commit);
+            // CommunicationService->postCommitWithId(Project->getId(), Commit);
 
             Status=UploadProjectFileToBackendStatus::OnlineProjectOpened;
             redecorateWithStatusChange();
@@ -167,9 +169,9 @@ namespace DigitalTwin::Client {
             selectedElements.push_back(elements[element.row()]->getId());
         }
 
-//        SysMLv2::Entities::DigitalTwin* digitalTwin = new SysMLv2::Entities::DigitalTwin(Ui->DTNameLineEdit->text().toStdString(), selectedElements, Commit->getId());
+        std::shared_ptr<SysMLv2::REST::TwinRequest> twinRequest = std::make_shared<SysMLv2::REST::TwinRequest>(Ui->DTNameLineEdit->text().toStdString(), Commit);
 
-//        CommunicationService->postDigitalTwin(digitalTwin, Project->getId());
+        CommunicationService->postDigitalTwin(twinRequest, Project->getId());
     }
 
 
