@@ -8,8 +8,10 @@
 #include <sysmlv2/rest/entities/Commit.h>
 #include <sysmlv2/rest/entities/IEntity.h>
 
+#include "../cpp_backend_communication_global.h"
+
 namespace SysMLv2::REST {
-    class TwinRequest : public IEntity{
+    class CPSBACKENDCOMMUNICATION_EXPORT TwinRequest : public IEntity{
     public:
         explicit TwinRequest(std::string name, std::shared_ptr<SysMLv2::REST::Commit> referencedCommit);
         explicit TwinRequest(std::string jsonString);
