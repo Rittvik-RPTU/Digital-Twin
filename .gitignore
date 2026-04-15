@@ -8,3 +8,4 @@
 CMakeUserPresets.json
 CMakePresets.json
 .DS_STORE
+config.cfg

@@ -8,14 +8,17 @@
 #include <BaseFuctions/StringExtention.hpp>
 #include <MQTT/entities/DigitalTwinEntity.h>
 #include <MQTT/Topics.h>
+#include <nlohmann/json.hpp>
 #include <iostream>
 #include <utility>
+#include <fstream>
 #include <string>
 
 namespace DIGITAL_TWIN_SERVER {
     DigitalTwinServerInstanceManager::DigitalTwinServerInstanceManager(int argc, char *argv[])
     {
         mapInstanceSettingsByArguments(argc,argv);
+        openConfigFileIfExist();
     }
 
     DigitalTwinServerInstanceManager::~DigitalTwinServerInstanceManager() {
@@ -32,9 +35,9 @@ namespace DIGITAL_TWIN_SERVER {
 
         const auto ioc = new boost::asio::io_context();
 
-        BrokerService = new MQTTBrokerService(ioc,1883);
+        BrokerService = new MQTTBrokerService(ioc, std::stoi(ArgumentsMap[INSTANCE_MQTT_PORT]));
 
-        ClientService = new PHYSICAL_TWIN_COMMUNICATION::MqttClientService(ioc,"localhost","1883","digital-twin-server");
+        ClientService = new PHYSICAL_TWIN_COMMUNICATION::MqttClientService(ioc,"localhost", ArgumentsMap[INSTANCE_MQTT_PORT], "digital-twin-server");
         DigitalTwinManager = new DigitalTwin::DigitalTwinManager(BackendCommunicationService, ClientService, false);
     }
 
@@ -82,6 +85,26 @@ namespace DIGITAL_TWIN_SERVER {
         else
             for(int i = 0; i<ARGUMENTS_SIZE; i++)
                 ArgumentsMap.insert(std::make_pair<ARGUMENTS,std::string>(ARGUMENTS(i), std::string(DefaultValueForArgument[i])));
+    }
+
+    void DigitalTwinServerInstanceManager::openConfigFileIfExist()
+    {
+        if (!ArgumentsMap[ARGUMENTS::INSTANCE_CONFIG_FILE_PATH].empty()) {
+            std::ifstream file(ArgumentsMap[ARGUMENTS::INSTANCE_CONFIG_FILE_PATH].c_str());
+            std::stringstream buffer;
+            buffer << file.rdbuf();
+
+            nlohmann::json json = nlohmann::json::parse(buffer.str());
+
+            ArgumentsMap[AGILA_URL] = json["sysml"]["url"];
+            ArgumentsMap[AGILA_PORT] = json["sysml"]["port"];
+            ArgumentsMap[AGILA_USERNAME] = json["sysml"]["username"];
+            ArgumentsMap[AGILA_PASSWORD] = json["sysml"]["password"];
+
+            ArgumentsMap[INSTANCE_MQTT_PORT] = json["run"]["mqtt"]["port"];
+            ArgumentsMap[INSTANCE_MQTT_CERT_CHAIN] = json["run"]["mqtt"]["cert_chain"];
+            ArgumentsMap[INSTANCE_MQTT_CERT_PRIV] = json["run"]["mqtt"]["cert_private_key"];
+        }
     }
 
     void DigitalTwinServerInstanceManager::createDTTopicAndCallback() {
