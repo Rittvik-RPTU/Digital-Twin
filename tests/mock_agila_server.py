@@ -3,11 +3,15 @@ import re
 from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
 
 
+import os
+
 # 1. Load Valid Users from ACL
 
 VALID_USERS = {}
 try:
-    with open('users_acl.json', 'r') as f:
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    acl_path = os.path.join(base_dir, 'users_acl.json')
+    with open(acl_path, 'r') as f:
         acl_data = json.load(f)
         for username in acl_data.get('users', {}):
             if username == "admin":
