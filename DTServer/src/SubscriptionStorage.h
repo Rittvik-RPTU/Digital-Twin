@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <mutex>
 #include <vector>
@@ -27,7 +27,27 @@ namespace DIGITAL_TWIN_SERVER
 		static std::vector<std::string_view>  split(std::string_view s);
 
 		template<class F>
-		void forEachMatch(std::string_view topic, Session const* publisher, F&& value);
+		void forEachMatch(std::string_view topic, Session const* publisher, F&& function)
+		{
+			std::lock_guard lg(Mutex);
+			for (auto it = Subscriptions.begin(); it != Subscriptions.end();)
+			{
+				auto session_lock = it->Session;
+				if (!session_lock)
+				{
+					it = Subscriptions.erase(it);
+					continue;
+				}
+				if (it->NoLocal && session_lock == publisher)
+				{
+					++it;
+					continue;
+				}
+				if (matchFilter(it->Filter, topic))
+					function(session_lock);
+				++it;
+			}
+		}
 
 		void broadcast(std::string topic, std::string payload);
 	private:
