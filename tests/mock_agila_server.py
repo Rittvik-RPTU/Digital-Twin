@@ -141,26 +141,40 @@ class MockSysMLHandler(BaseHTTPRequestHandler):
         
         # Route: GET /projects
     
-        if self.path == '/projects' or self.path == '/projects/':
-            # Collect projects from hardcoded DB + synthesized projects from ACL
-            all_projects = list(DB["projects"].values())
+        if self.path == '/projects' or self.path == '/projects/' or self.path.endswith('/projects'):
+            # Extract username from Bearer token (e.g., "Bearer mock-token-admin")
+            auth_header = self.headers.get('Authorization', '')
+            requesting_user = ""
+            if 'mock-token-' in auth_header:
+                requesting_user = auth_header.split('mock-token-')[-1]
             
-            # Synthesize projects for users in ACL not in hardcoded DB
+            # Load allowed projects for this user from ACL
+            allowed_pids = []
             try:
-                with open('users_acl.json', 'r') as f:
-                    acl = json.load(f)
-                    for u, data in acl.get('users', {}).items():
-                        for pid in data.get('projects', []):
-                            if pid not in DB["projects"]:
-                                # Add a fake project object for this ACL project
-                                all_projects.append({
-                                    "@id": pid,
-                                    "@type": "Project",
-                                    "name": f"Dynamic_Project_{pid[:8]}",
-                                    "description": f"Automatically generated for user {u}",
-                                    "defaultBranch": {"@id": f"branch-{pid[:8]}", "@type": "Branch", "name": "main"}
-                                })
+                base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                acl_path = os.path.join(base_dir, 'users_acl.json')
+                with open(acl_path, 'r') as f:
+                    acl_data = json.load(f)
+                    allowed_pids = acl_data.get('users', {}).get(requesting_user, {}).get('projects', [])
             except: pass
+
+            all_projects = []
+            
+            # Only add projects from DB if they are in the user's allowed list
+            for pid, project_obj in DB["projects"].items():
+                if pid in allowed_pids:
+                    all_projects.append(project_obj)
+            
+            # Synthesize other projects from ACL if they belong to this specific user
+            for pid in allowed_pids:
+                if pid not in DB["projects"]:
+                    all_projects.append({
+                        "@id": pid,
+                        "@type": "Project",
+                        "name": f"Dynamic_Project_{pid[:8]}",
+                        "description": f"Automatically generated for user {requesting_user}",
+                        "defaultBranch": {"@id": f"branch-{pid[:8]}", "@type": "Branch", "name": "main"}
+                    })
             
             self._send_json(200, all_projects)
             return

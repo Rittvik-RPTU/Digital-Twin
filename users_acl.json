@@ -15,5 +15,11 @@
         "abcd1234-e29b-41d4-a716-446655449999"
       ]
     }
+  },
+  "devices": {
+    "pt-secret-key-01": {
+      "device_id": "sensor-01",
+      "project": "990e8400-e29b-41d4-a716-999999999999"
+    }
   }
 }
