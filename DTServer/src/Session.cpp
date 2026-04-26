@@ -161,7 +161,9 @@ namespace DIGITAL_TWIN_SERVER
                     std::cout << "PUBLISH topic=" << topic
                               << " payload_bytes=" << payload.size() << "\n";
 
-                    self->_subscriptionStorage.broadcast(topic, payload);
+                    self->_subscriptionStorage.forEachMatch(topic, self, [topic, payload](Session* s) {
+                        s->send_qos0_publish(topic, payload);
+                    });
                 },
                 [&](async_mqtt::v5::disconnect_packet const&) {
                     self->stop();
