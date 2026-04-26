@@ -35,8 +35,12 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
          * Constructor needed for the connection to a Server.
          * @param server The Server URL or IP
          * @param port The Port on the server, where the DT Server is running.
+         * @param clientId Unique MQTT client identifier
+         * @param username Optional MQTT username for broker authentication
+         * @param password Optional MQTT password for broker authentication
          */
-        MqttClientService(boost::asio::io_context* ioc, std::string server, std::string port, std::string clientId);
+        MqttClientService(boost::asio::io_context* ioc, std::string server, std::string port, std::string clientId,
+                          std::string username = "", std::string password = "");
 
         virtual ~MqttClientService();
 
@@ -53,10 +57,12 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
         static std::vector<uint8_t> makeCorrelationData();
         static std::optional<std::string> extractCorrelationKey(async_mqtt::v5::publish_packet const& packet);
 
-        boost::asio::io_context IoContext;
+        boost::asio::io_context* IoContext;
         std::string Server;
         std::string Port;
         std::string ClientId;
+        std::string Username;
+        std::string Password;
         std::chrono::seconds KeepAlive;
 
         boost::asio::strand<boost::asio::any_io_executor> Strand;

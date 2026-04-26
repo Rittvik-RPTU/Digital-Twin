@@ -32,7 +32,7 @@ namespace DIGITAL_TWIN_SERVER {
 
         const auto ioc = new boost::asio::io_context();
 
-        BrokerService = new MQTTBrokerService(ioc,1883);
+        BrokerService = new MQTTBrokerService(ioc,1883, BackendCommunicationService);
 
         ClientService = new PHYSICAL_TWIN_COMMUNICATION::MqttClientService(ioc,"localhost","1883","digital-twin-server");
         DigitalTwinManager = new DigitalTwin::DigitalTwinManager(BackendCommunicationService, ClientService, false);

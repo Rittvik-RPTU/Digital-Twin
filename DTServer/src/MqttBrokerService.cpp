@@ -10,15 +10,19 @@
 #include "MqttBrokerService.h"
 
 #include <async_mqtt/all.hpp>
+#include <BECommunicationService.h>
 
 #include "Session.h"
 #include "SubscriptionStorage.h"
 
 namespace DIGITAL_TWIN_SERVER {
 
-    MQTTBrokerService::MQTTBrokerService(boost::asio::io_context* ioc, unsigned serverPort, std::string serverCertPath, std::string serverCertPrivKeyPath) :
+    MQTTBrokerService::MQTTBrokerService(boost::asio::io_context* ioc, unsigned serverPort,
+                                         BACKEND_COMMUNICATION::CommunicationService* backendService,
+                                         std::string serverCertPath, std::string serverCertPrivKeyPath) :
     Context(ioc),
-    Acceptor(*ioc,boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), serverPort))
+    Acceptor(*ioc,boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), serverPort)),
+    authService(backendService)
     {
         ServerPort = serverPort;
         assert(!(!serverCertPath.empty() && serverCertPrivKeyPath.empty()));

@@ -7,9 +7,10 @@
 
 namespace DigitalTwin::Client {
 
-    MQTTConnectionThread::MQTTConnectionThread(std::string url, std::string port, QObject* parent) :
+    MQTTConnectionThread::MQTTConnectionThread(std::string url, std::string port, std::string username, std::string password, QObject* parent) :
             QThread(parent),
-            ClientService(new PHYSICAL_TWIN_COMMUNICATION::MqttClientService(new boost::asio::io_context(),url, port, "digital-twin-client")){
+            ClientService(new PHYSICAL_TWIN_COMMUNICATION::MqttClientService(new boost::asio::io_context(), url, port, "digital-twin-client",
+                          std::move(username), std::move(password))){
     }
 
     MQTTConnectionThread::~MQTTConnectionThread() {

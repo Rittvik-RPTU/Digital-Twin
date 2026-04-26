@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <async_mqtt/all.hpp>
 #include "BrokerState.h"
@@ -25,11 +25,11 @@ namespace DIGITAL_TWIN_SERVER
 
 	private:
 		async_mqtt::endpoint<async_mqtt::role::server, async_mqtt::protocol::mqtt>* ServerEndpoint;
-		//boost::asio::strand<boost::asio::any_io_executor> Strand;
 
-		//BrokerState& _BrokerState;
-		// bool Authenticated;
 		std::string ClientId;
 		SubscriptionStorage& _subscriptionStorage;
+		AuthenticationService& _authService;
+		Principal _principal;
+		bool _authenticated = false;
 	};
 }

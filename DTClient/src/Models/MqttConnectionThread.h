@@ -16,7 +16,7 @@ namespace DigitalTwin::Client {
     Q_OBJECT
     public:
         MQTTConnectionThread() = delete;
-        MQTTConnectionThread(std::string url, std::string port, QObject* parent = nullptr);
+        MQTTConnectionThread(std::string url, std::string port, std::string username = "", std::string password = "", QObject* parent = nullptr);
         ~MQTTConnectionThread();
 
         void run() override;

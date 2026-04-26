@@ -20,7 +20,10 @@
 #include <boost/asio/use_awaitable.hpp>
 
 namespace PHYSICAL_TWIN_COMMUNICATION {
-    MqttClientService::MqttClientService(boost::asio::io_context* ioc, std::string server, std::string port, std::string clientId) : KeepAlive(60),
+    MqttClientService::MqttClientService(boost::asio::io_context* ioc, std::string server, std::string port, std::string clientId,
+                                         std::string username, std::string password) :
+        IoContext(ioc),
+        KeepAlive(60),
         Strand(ioc->get_executor()),
         Client(Strand),
         ClientStarted(false),
@@ -28,8 +31,9 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
         Server = server;
         Port = port;
         ClientId = clientId;
+        Username = std::move(username);
+        Password = std::move(password);
     }
-
     MqttClientService::~MqttClientService() {
         stop();
     }
@@ -38,7 +42,7 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
         if (ClientStarted == true) return;
         WorkerThread = std::thread([this] {
             boost::asio::co_spawn(Strand, [this]() -> boost::asio::awaitable<void> { co_await run(); }, boost::asio::detached);
-            IoContext.run();
+            IoContext->run();
         });
         ClientStarted = true;
     }
@@ -48,7 +52,7 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
         boost::asio::post(Strand, [this] {
             boost::asio::co_spawn(Strand, [this]() -> boost::asio::awaitable<void> {
                 try { co_await Client.async_close(boost::asio::use_awaitable); } catch (...) {}
-                IoContext.stop();
+                IoContext->stop();
                 co_return;
             }, boost::asio::detached);
         });
@@ -160,12 +164,17 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
         // 1) TCP handshake :contentReference[oaicite:5]{index=5}
         co_await Client.async_underlying_handshake(Server, Port, boost::asio::use_awaitable);
 
-        // 2) MQTT CONNECT + start receive loop :contentReference[oaicite:6]{index=6}
+        // 2) MQTT CONNECT with optional credentials for broker authentication
+        std::optional<std::string> opt_user = Username.empty() ? std::nullopt : std::optional<std::string>(Username);
+        std::optional<std::string> opt_pass = Password.empty() ? std::nullopt : std::optional<std::string>(Password);
+
         auto connack_opt = co_await Client.async_start(
             async_mqtt::v5::connect_packet{
                 true,
                 (uint16_t)KeepAlive.count(),
-                ClientId
+                ClientId,
+                opt_user,
+                opt_pass
             },
             boost::asio::use_awaitable
         );

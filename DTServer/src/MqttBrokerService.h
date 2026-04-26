@@ -12,6 +12,11 @@
 #include "Session.h"
 #include "AuthenticationService.h"
 
+// Forward declaration
+namespace BACKEND_COMMUNICATION {
+    class CommunicationService;
+}
+
 namespace DIGITAL_TWIN_SERVER {
     /**
      * @class MQTTBrokerService
@@ -24,17 +29,13 @@ namespace DIGITAL_TWIN_SERVER {
 
         void join(std::shared_ptr<Session> const& s) { sessions.insert(s); }
         void leave(std::shared_ptr<Session> const& s) { sessions.erase(s); }
-
-        // void broadcast_qos0(std::string const& topic, std::string const& payload) {
-        //     for (auto const& s : sessions) {
-        //         //if (s) s->send_qos0_publish(topic, payload);
-        //     }
-        // }
     };
 
     class MQTTBrokerService {
     public:
-        explicit MQTTBrokerService(boost::asio::io_context* ioc, unsigned serverPort, std::string serverCertPath = "", std::string serverCertPrivKeyPath = "");
+        explicit MQTTBrokerService(boost::asio::io_context* ioc, unsigned serverPort,
+                                   BACKEND_COMMUNICATION::CommunicationService* backendService = nullptr,
+                                   std::string serverCertPath = "", std::string serverCertPrivKeyPath = "");
         explicit MQTTBrokerService(boost::asio::io_context* ioc, std::string serverCertPath, std::string serverCertPrivKeyPath);
 
         void setUpTLS();
