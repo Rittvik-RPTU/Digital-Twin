@@ -39,7 +39,21 @@ namespace DIGITAL_TWIN_SERVER
 				}
 				_userAcls[username] = projects;
 			}
-			std::cout << "[AuthService] Loaded ACL config with " << _userAcls.size() << " users.\n";
+			
+			_deviceAcls.clear();
+			auto devicesOpt = pt.get_child_optional("devices");
+			if (devicesOpt) {
+				for (auto& device : *devicesOpt) {
+					std::string apiKey = device.first;
+					DeviceConfig config;
+					config.deviceId = device.second.get<std::string>("device_id");
+					config.projectId = device.second.get<std::string>("project");
+					_deviceAcls[apiKey] = config;
+				}
+			}
+			
+			std::cout << "[AuthService] Loaded ACL config with " << _userAcls.size() << " users and " 
+			          << _deviceAcls.size() << " devices.\n";
 		} catch (const std::exception& e) {
 			std::cerr << "[AuthService] Failed to load ACL config from users_acl.json: " << e.what() << "\n";
 		}
@@ -56,7 +70,25 @@ namespace DIGITAL_TWIN_SERVER
 		}
 
 		try {
-			// Step 1: Authenticate against the SysML v2 backend
+			// Phase 3: Physical Twin API Key Authentication
+			if (username == "PHYSICAL_TWIN") {
+				// The password field contains the API Key
+				auto it = _deviceAcls.find(password);
+				if (it != _deviceAcls.end()) {
+					outPrincipal.id = it->second.deviceId;
+					outPrincipal.authorizedProjectIds = { it->second.projectId };
+					outPrincipal.isPhysicalTwin = true;
+					
+					std::cout << "[AuthService] Physical Twin '" << outPrincipal.id 
+					          << "' authenticated successfully via API Key.\n";
+					return true;
+				} else {
+					std::cout << "[AuthService] Physical Twin authentication failed: Invalid API Key.\n";
+					return false;
+				}
+			}
+
+			// Step 1: Authenticate human users against the SysML v2 backend
 			bool loginSuccess = _backendService->setUserForLoginInBackend(username, password);
 			if (!loginSuccess) {
 				std::cout << "[AuthService] Login failed for user: " << username << "\n";
@@ -118,9 +150,10 @@ namespace DIGITAL_TWIN_SERVER
 
 		// For Physical Twins: additionally restrict to device-owned topics
 		if (p.isPhysicalTwin) {
-			// PT may only publish to topics that begin with its own client ID
-			std::string devicePrefix = p.id + "/";
-			if (topic.rfind(devicePrefix, 0) != 0) {
+			// PT may only publish to topics within its project that begin with its own device ID
+			// Expected format: "project-uuid/device-id/..."
+			std::string expectedPrefix = projectId + "/" + p.id + "/";
+			if (topic.rfind(expectedPrefix, 0) != 0) {
 				return false;
 			}
 		}
