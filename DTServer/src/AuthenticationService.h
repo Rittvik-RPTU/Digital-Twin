@@ -75,6 +75,13 @@ namespace DIGITAL_TWIN_SERVER
 	private:
 		BACKEND_COMMUNICATION::CommunicationService* _backendService = nullptr;
 		std::map<std::string, std::vector<std::string>> _userAcls;
+		
+		struct DeviceConfig {
+			std::string deviceId;
+			std::string projectId;
+		};
+		// Maps API keys to device configurations
+		std::map<std::string, DeviceConfig> _deviceAcls;
 
 		void loadAclConfig();
 
