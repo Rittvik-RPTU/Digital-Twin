@@ -60,7 +60,8 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
     }
 
     void MqttClientService::publish(std::string topic, std::string payload, async_mqtt::qos qos) {
-        boost::asio::post(Strand, [this, topic=std::move(topic), payload=std::move(payload), qos] {
+        std::string securedTopic = secureTopic(topic);
+        boost::asio::post(Strand, [this, topic=std::move(securedTopic), payload=std::move(payload), qos] {
         if (!Connected) return;
         boost::asio::co_spawn(Strand, [this, topic, payload, qos]() -> boost::asio::awaitable<void> {
             co_await Client.async_publish(async_mqtt::v5::publish_packet{topic, payload, qos}, boost::asio::use_awaitable);
@@ -73,10 +74,13 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
         std::promise<std::string> prom;
         auto fut = prom.get_future();
 
+        std::string securedReqTopic = secureTopic(topic);
+        std::string securedRespTopic = secureTopic(respTopic);
+
         boost::asio::post(Strand, [this,
-                          req_topic=std::move(topic),
+                          req_topic=std::move(securedReqTopic),
                           req_payload=std::move(payload),
-                          resp_topic=std::move(respTopic),
+                          resp_topic=std::move(securedRespTopic),
                           prom=std::move(prom)]() mutable {
             if (!Connected) {
                 prom.set_exception(std::make_exception_ptr(std::runtime_error("Not connected")));
@@ -124,7 +128,8 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
     }
 
     void MqttClientService::subscribe(std::string topic, std::function<void(std::string topic, std::string payload)> callback) {
-        boost::asio::post(Strand, [this, topic = std::move(topic), callback = std::move(callback)]() mutable {
+        std::string securedTopic = secureTopic(topic);
+        boost::asio::post(Strand, [this, topic = std::move(securedTopic), callback = std::move(callback)]() mutable {
 
             Callbacks[topic] = std::move(callback);
 
@@ -236,5 +241,25 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
             }
         }
         return std::nullopt;
+    }
+
+    void MqttClientService::setProjectContext(std::string projectUuid) {
+        ProjectContext = std::move(projectUuid);
+    }
+
+    std::string MqttClientService::secureTopic(const std::string& topic) const {
+        if (ProjectContext.empty()) return topic;
+
+        // System topics (like connectToTwin) are not prefixed
+        if (topic == "connectToTwin" || topic.find("connectToTwin/") == 0) {
+            return topic;
+        }
+
+        // Check if already prefixed to avoid double-prefixing
+        if (topic.find(ProjectContext) == 0) {
+            return topic;
+        }
+
+        return ProjectContext + "/" + topic;
     }
 }

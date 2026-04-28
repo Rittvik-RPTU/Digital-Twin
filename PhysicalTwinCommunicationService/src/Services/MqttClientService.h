@@ -52,10 +52,23 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
 
         void subscribe(std::string topic, std::function<void(std::string topic, std::string payload)> callback);
 
+        /**
+         * Sets the project context for automatic topic namespacing.
+         * If set, all subsequent publish/subscribe calls will be transparently prefixed
+         * with the project UUID to comply with broker-side access control.
+         */
+        void setProjectContext(std::string projectUuid);
+
     private:
         boost::asio::awaitable<void> run();
         static std::vector<uint8_t> makeCorrelationData();
         static std::optional<std::string> extractCorrelationKey(async_mqtt::v5::publish_packet const& packet);
+
+        /**
+         * Ensures a topic is correctly prefixed with the project context.
+         * Skips prefixing for system topics or if the prefix is already present.
+         */
+        std::string secureTopic(const std::string& topic) const;
 
         boost::asio::io_context* IoContext;
         std::string Server;
@@ -63,6 +76,7 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
         std::string ClientId;
         std::string Username;
         std::string Password;
+        std::string ProjectContext;
         std::chrono::seconds KeepAlive;
 
         boost::asio::strand<boost::asio::any_io_executor> Strand;
