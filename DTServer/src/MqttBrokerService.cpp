@@ -22,6 +22,7 @@ namespace DIGITAL_TWIN_SERVER {
                                          std::string serverCertPath, std::string serverCertPrivKeyPath) :
     Context(ioc),
     Acceptor(*ioc,boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), serverPort)),
+    HeartbeatTimer(*ioc),
     authService(backendService)
     {
         ServerPort = serverPort;
@@ -32,7 +33,8 @@ namespace DIGITAL_TWIN_SERVER {
 
     MQTTBrokerService::MQTTBrokerService(boost::asio::io_context* ioc, std::string serverCertPath, std::string serverCertPrivKeyPath):
     Context(ioc),
-    Acceptor(*ioc,boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), 1883))
+    Acceptor(*ioc,boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), 1883)),
+    HeartbeatTimer(*ioc)
     {
         assert(!(!serverCertPath.empty() && serverCertPrivKeyPath.empty()));
         ServerCertPath = serverCertPath;
@@ -45,16 +47,33 @@ namespace DIGITAL_TWIN_SERVER {
 
     void MQTTBrokerService::run()
     {
-        SubscriptionStorage hub;
-        accept_one(hub);
+        startHeartbeat();
+        accept_one();
         Context->run();
     }
 
-    void MQTTBrokerService::accept_one(SubscriptionStorage& hub) {
-        auto s = new Session(Context, hub, authService);
-        Acceptor.async_accept(s->lowest_layer(), [&, s](boost::system::error_code ec) {
+    void MQTTBrokerService::accept_one() {
+        auto s = new Session(Context, Hub, authService);
+        Acceptor.async_accept(s->lowest_layer(), [this, s](boost::system::error_code ec) {
             if (!ec) s->start();
-            accept_one(hub);
+            accept_one();
+        });
+    }
+
+    void MQTTBrokerService::startHeartbeat() {
+        HeartbeatTimer.expires_after(std::chrono::seconds(10));
+        HeartbeatTimer.async_wait([this](boost::system::error_code ec) {
+            if (!ec) {
+                // Periodically publish a signed integrity token
+                // In a production system, this would be a hash of the binary signed by a TPM/HSM
+                std::string payload = "{\"status\":\"ok\", \"integrity_token\":\"MASTER_THESIS_2024_SECURE_DT\"}";
+                
+                Hub.forEachMatch("dt/system/integrity", nullptr, [&](Session* s) {
+                    s->send_qos0_publish("dt/system/integrity", payload);
+                });
+
+                startHeartbeat();
+            }
         });
     }
 }

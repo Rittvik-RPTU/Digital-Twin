@@ -247,19 +247,32 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
         ProjectContext = std::move(projectUuid);
     }
 
-    std::string MqttClientService::secureTopic(const std::string& topic) const {
-        if (ProjectContext.empty()) return topic;
+    void MqttClientService::setDeviceContext(std::string deviceId) {
+        DeviceContext = std::move(deviceId);
+    }
 
+    std::string MqttClientService::secureTopic(const std::string& topic) const {
         // System topics (like connectToTwin) are not prefixed
         if (topic == "connectToTwin" || topic.find("connectToTwin/") == 0) {
             return topic;
         }
 
+        std::string prefix;
+        if (!ProjectContext.empty()) {
+            prefix = ProjectContext;
+        }
+        if (!DeviceContext.empty()) {
+            if (!prefix.empty()) prefix += "/";
+            prefix += DeviceContext;
+        }
+
+        if (prefix.empty()) return topic;
+
         // Check if already prefixed to avoid double-prefixing
-        if (topic.find(ProjectContext) == 0) {
+        if (topic.find(prefix + "/") == 0) {
             return topic;
         }
 
-        return ProjectContext + "/" + topic;
+        return prefix + "/" + topic;
     }
 }

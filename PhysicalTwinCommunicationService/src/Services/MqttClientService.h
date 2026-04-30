@@ -59,6 +59,12 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
          */
         void setProjectContext(std::string projectUuid);
 
+        /**
+         * Sets the device context for automatic topic namespacing.
+         * For Physical Twins, topics must be prefixed with both project UUID and device ID.
+         */
+        void setDeviceContext(std::string deviceId);
+
     private:
         boost::asio::awaitable<void> run();
         static std::vector<uint8_t> makeCorrelationData();
@@ -77,6 +83,7 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
         std::string Username;
         std::string Password;
         std::string ProjectContext;
+        std::string DeviceContext;
         std::chrono::seconds KeepAlive;
 
         boost::asio::strand<boost::asio::any_io_executor> Strand;

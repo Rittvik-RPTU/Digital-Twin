@@ -142,7 +142,12 @@ namespace DIGITAL_TWIN_SERVER
 
 	bool AuthenticationService::canPublish(Principal const& p, std::string_view topic) const
 	{
-		// System topics are open to all authenticated users
+		// Critical: Only the internal server can publish to the integrity heartbeat topic
+		if (topic == "dt/system/integrity" && p.id != "digital-twin-server") {
+			return false;
+		}
+
+		// Other system topics are open to all authenticated users
 		if (isSystemTopic(topic)) return true;
 
 		std::string projectId = extractProjectId(topic);
@@ -180,7 +185,9 @@ namespace DIGITAL_TWIN_SERVER
 	bool AuthenticationService::isSystemTopic(std::string_view topic)
 	{
 		// Framework-internal topics that are not project-scoped
-		return topic == "connectToTwin"
-		    || topic.rfind("$SYS/", 0) == 0;
+		if (topic == "connectToTwin") return true;
+		if (topic.size() >= 3 && topic.substr(0, 3) == "dt/") return true;
+		if (topic.size() >= 5 && topic.substr(0, 5) == "$SYS/") return true;
+		return false;
 	}
 }

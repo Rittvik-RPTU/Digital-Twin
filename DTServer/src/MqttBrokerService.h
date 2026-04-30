@@ -11,6 +11,8 @@
 #include <boost/asio/ssl.hpp>
 #include "Session.h"
 #include "AuthenticationService.h"
+#include "SubscriptionStorage.h"
+#include <chrono>
 
 // Forward declaration
 namespace BACKEND_COMMUNICATION {
@@ -42,11 +44,14 @@ namespace DIGITAL_TWIN_SERVER {
         void run();
 
     private:
-        void accept_one(SubscriptionStorage& hub);
+        void accept_one();
+        void startHeartbeat();
 
         boost::asio::io_context* Context;
         boost::asio::ssl::context TLS_Context{ boost::asio::ssl::context::tls_server };
         boost::asio::ip::tcp::acceptor Acceptor;
+        boost::asio::steady_timer HeartbeatTimer;
+        SubscriptionStorage Hub;
         unsigned ServerPort = 1883;
         std::string ServerCertPath = "";
         std::string ServerCertPrivKeyPath = "";

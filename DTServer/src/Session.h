@@ -13,7 +13,7 @@ namespace DIGITAL_TWIN_SERVER
 	public:
 		Session() = delete;
 		Session(boost::asio::io_context* ioc, SubscriptionStorage& subStore, AuthenticationService& authService);
-		~Session() = default;
+		~Session();
 
 		void start();
 		void stop();
@@ -31,5 +31,6 @@ namespace DIGITAL_TWIN_SERVER
 		AuthenticationService& _authService;
 		Principal _principal;
 		bool _authenticated = false;
+		bool _stopped = false;
 	};
 }

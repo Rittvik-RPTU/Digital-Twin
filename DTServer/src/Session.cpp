@@ -12,15 +12,27 @@ namespace DIGITAL_TWIN_SERVER
         ServerEndpoint = new async_mqtt::endpoint<async_mqtt::role::server, async_mqtt::protocol::mqtt>(async_mqtt::protocol_version::v5,ioc->get_executor());
     }
 
+    Session::~Session() {
+        delete ServerEndpoint;
+    }
+
     void Session::start() {
         _subscriptionStorage.add(this,"",false);
         recv_connect();
     }
 
     void Session::stop() {
+        if (_stopped) return;
+        _stopped = true;
         _subscriptionStorage.removeAll(this);
         boost::system::error_code ec;
         ServerEndpoint->lowest_layer().close(ec);
+
+        // Safely schedule deletion so it doesn't delete itself inside an active callback
+        auto self = this;
+        boost::asio::post(ServerEndpoint->lowest_layer().get_executor(), [self]() {
+            delete self;
+        });
     }
 
     void Session::recv_connect() {
