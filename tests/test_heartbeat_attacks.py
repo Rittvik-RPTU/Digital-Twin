@@ -17,19 +17,35 @@ def main():
     print_header("Attack 1: Spoofing the Integrity Heartbeat")
     print("Attempting to publish to dt/system/integrity as a normal user")
     
+    spoof_blocked = False
+
     def on_publish_spoof(client, userdata, mid, reason_code, properties):
-        if reason_code.is_failure:
-            print(f"[SUCCESS] Command failed as expected (Reason code: {reason_code})")
+        # In QoS 0, on_publish just means the packet was sent. 
+        # We wait for the server to disconnect us.
+        pass
+
+    def on_disconnect_spoof(client, userdata, disconnect_flags, reason_code, properties):
+        nonlocal spoof_blocked
+        if reason_code == "not_authorized" or reason_code == 0x87:
+            print(f"[SUCCESS] Server disconnected client as expected (Reason: {reason_code})")
+            spoof_blocked = True
         else:
-            print("[ERROR] Command succeeded unexpectedly! Server didn't block it.")
-        client.disconnect()
+            print(f"[WARNING] Disconnected with unexpected code: {reason_code}")
 
     client1 = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, protocol=mqtt.MQTTv5)
     client1.username_pw_set("testuser", "testpass")
     client1.on_publish = on_publish_spoof
+    client1.on_disconnect = on_disconnect_spoof
     client1.connect("localhost", 1883)
     client1.publish("dt/system/integrity", '{"status":"fake_ok"}')
-    client1.loop_forever()
+    
+    # Wait a few seconds for the disconnect to happen
+    start_time = time.time()
+    while time.time() - start_time < 3 and not spoof_blocked:
+        client1.loop(0.1)
+
+    if not spoof_blocked:
+        print("[ERROR] Server did NOT block the unauthorized publish!")
 
     # Attack 2: Attempt to cause a Denial of Service (DoS) by spamming large payloads
     print_header("Attack 2: Resource Exhaustion / Large Packet")
