@@ -15,8 +15,14 @@ int main(int argc, char *argv[]) {
 
     try {
         instanceManager->createInstance();
-    }catch (...) {
+    }catch (const std::exception& e) {
+        std::cerr << "CRITICAL ERROR in createInstance: " << e.what() << std::endl;
         instanceManager->destroyOnError();
+        return EXIT_FAILURE;
+    }catch (...) {
+        std::cerr << "CRITICAL UNKNOWN ERROR in createInstance" << std::endl;
+        instanceManager->destroyOnError();
+        return EXIT_FAILURE;
     }
 
     try {

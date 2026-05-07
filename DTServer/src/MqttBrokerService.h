@@ -26,12 +26,7 @@ namespace DIGITAL_TWIN_SERVER {
      * @version 2.0
      */
 
-    struct Hub {
-        std::unordered_set<std::shared_ptr<Session>> sessions;
 
-        void join(std::shared_ptr<Session> const& s) { sessions.insert(s); }
-        void leave(std::shared_ptr<Session> const& s) { sessions.erase(s); }
-    };
 
     class MQTTBrokerService {
     public:
@@ -51,7 +46,7 @@ namespace DIGITAL_TWIN_SERVER {
         boost::asio::ssl::context TLS_Context{ boost::asio::ssl::context::tls_server };
         boost::asio::ip::tcp::acceptor Acceptor;
         boost::asio::steady_timer HeartbeatTimer;
-        SubscriptionStorage Hub;
+        SubscriptionStorage _subscriptionStorage;
         unsigned ServerPort = 1883;
         std::string ServerCertPath = "";
         std::string ServerCertPrivKeyPath = "";

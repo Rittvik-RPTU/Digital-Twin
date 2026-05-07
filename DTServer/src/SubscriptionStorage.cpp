@@ -5,13 +5,13 @@
 
 namespace DIGITAL_TWIN_SERVER
 {
-	void SubscriptionStorage::add(Session* session, std::string filter, bool no_local)
+	void SubscriptionStorage::add(std::shared_ptr<Session> session, std::string filter, bool no_local)
 	{
 		std::lock_guard lg(Mutex);
 		Subscriptions.push_back(SubscriptionEntry{ session,std::move(filter), no_local });
 	}
 
-	void SubscriptionStorage::removeAll(Session* session)
+	void SubscriptionStorage::removeAll(std::shared_ptr<Session> session)
 	{
 		std::lock_guard lg(Mutex);
 		Subscriptions.erase(std::remove_if(Subscriptions.begin(), Subscriptions.end(), [&](SubscriptionEntry elem)

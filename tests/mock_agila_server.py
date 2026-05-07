@@ -31,13 +31,14 @@ except Exception as e:
 
 # Admin's Confidential Data
 ADMIN_PROJECT_ID = "550e8400-e29b-41d4-a716-446655440000"
-ADMIN_BRANCH_ID = "660e8400-e29b-41d4-a716-adminbranch1"
-ADMIN_COMMIT_ID = "770e8400-e29b-41d4-a716-admincommit1"
-
 # Testuser's Standard Data
 TEST_PROJECT_ID = "990e8400-e29b-41d4-a716-999999999999"
-TEST_BRANCH_ID = "660e8400-e29b-41d4-a716-testbranch01"
-TEST_COMMIT_ID = "770e8400-e29b-41d4-a716-testcommit01"
+TEST_BRANCH_ID = "660e8400-e29b-41d4-a716-111111111111"
+TEST_COMMIT_ID = "770e8400-e29b-41d4-a716-222222222222"
+
+# Admin's IDs
+ADMIN_BRANCH_ID = "660e8400-e29b-41d4-a716-333333333333"
+ADMIN_COMMIT_ID = "770e8400-e29b-41d4-a716-444444444444"
 
 # Database representing the server state
 DB = {
@@ -86,20 +87,54 @@ DB = {
     "elements": {
         ADMIN_COMMIT_ID: [
             {
-                "@id": "880e8400-e29b-41d4-a716-adminelem001",
+                "@id": "880e8400-e29b-41d4-a716-000000000001",
                 "@type": "TextualRepresentation",
                 "name": "ClassifiedDroneDef",
+                "declaredName": "ClassifiedDroneDef",
+                "visibility": "public",
                 "body": "part ClassifiedDrone { \n  attribute stealthLevel : Scalar;\n}",
                 "language": "SysML"
             }
         ],
         TEST_COMMIT_ID: [
             {
-                "@id": "880e8400-e29b-41d4-a716-testelem0001",
+                "@id": "880e8400-e29b-41d4-a716-000000000002",
                 "@type": "TextualRepresentation",
                 "name": "ElectricCarDef",
-                "body": "part ElectricCar { \n  attribute chargeLevel : Scalar;\n}",
+                "declaredName": "ElectricCarDef",
+                "visibility": "public",
+                "body": "part ElectricCar { \n  attribute chargeLevel : Scalar;\n  attribute temperature : Real;\n  attribute speed : Real;\n}",
                 "language": "SysML"
+            },
+            {
+                "@id": "880e8400-e29b-41d4-a716-000000000003",
+                "@type": "TextualRepresentation",
+                "kind": "AttributeUsage",
+                "name": "temperature",
+                "declaredName": "temperature",
+                "visibility": "public",
+                "lowerBound": 0.0,
+                "upperBound": 120.0
+            },
+            {
+                "@id": "880e8400-e29b-41d4-a716-000000000004",
+                "@type": "TextualRepresentation",
+                "kind": "AttributeUsage",
+                "name": "speed",
+                "declaredName": "speed",
+                "visibility": "public",
+                "lowerBound": 0.0,
+                "upperBound": 250.0
+            },
+            {
+                "@id": "880e8400-e29b-41d4-a716-000000000005",
+                "@type": "TextualRepresentation",
+                "kind": "AttributeUsage",
+                "name": "chargeLevel",
+                "declaredName": "chargeLevel",
+                "visibility": "public",
+                "lowerBound": 0.0,
+                "upperBound": 100.0
             }
         ]
     }
@@ -107,7 +142,7 @@ DB = {
 
 # Which projects belong to which user
 USER_PROJECT_OWNERSHIP = {
-    "admin": [ADMIN_PROJECT_ID],
+    "admin": [ADMIN_PROJECT_ID, TEST_PROJECT_ID],
     "testuser": [TEST_PROJECT_ID]
 }
 
@@ -205,11 +240,11 @@ class MockSysMLHandler(BaseHTTPRequestHandler):
             cid = elements_match.group(1)
             elements = DB["elements"].get(cid, [])
             if not elements:
-                # Synthesize a fake car part
+                # Synthesize a fake car part with valid hex UUIDs
                 elements = [{
-                    "@id": f"elem-{cid[:8]}",
+                    "@id": f"{cid[:32]}ffff", # Ensure 36 chars if cid is shorter, but cid is 36.
                     "@type": "TextualRepresentation",
-                    "name": "DynamicPart",
+                    "declaredName": "DynamicPart",
                     "body": "part DynamicPart { \n  attribute data : Scalar;\n}",
                     "language": "SysML"
                 }]

@@ -1,8 +1,10 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <vector>
 #include <map>
+#include <mutex>
 
 // Forward declaration to avoid circular includes
 namespace BACKEND_COMMUNICATION {
@@ -27,7 +29,7 @@ namespace DIGITAL_TWIN_SERVER
 	 * project-based access control on MQTT topics.
 	 *
 	 * @author Moritz Herzog <herzogm@rptu.de> (original skeleton)
-	 * @author Rittvik Vashishtha (Phase 2: credential validation & access control)
+	 * @author Rittvik Vashishtha (credential validation & access control)
 	 * @version 2.0
 	 */
 	class AuthenticationService
@@ -72,9 +74,46 @@ namespace DIGITAL_TWIN_SERVER
 		 */
 		bool canPublish(Principal const& p, std::string_view topic) const;
 
+		/**
+		 * Checks if a topic is a system-reserved topic (e.g., $SYS/, dt/system/)
+		 * that does not follow the project-scoped UUID structure.
+		 */
+		static bool isSystemTopic(std::string_view topic);
+
+
+		/**
+		 * Data-Validation Layer A : Fetches model-derived attribute bounds from the SysML v2
+		 * backend for a given project. Results are cached in _boundsCache.
+		 *
+		 * @param projectId UUID string of the project to fetch bounds for.
+		 */
+		void fetchBoundsFromModel(const std::string& projectId);
+
+		/**
+		 * Data-Validation Layer A : Verifies an incoming MQTT telemetry payload against
+		 * model-derived hard bounds. Parses the JSON payload and compares each
+		 * numeric value against the cached AttributeUsage constraints.
+		 *
+		 * @param projectId  The project UUID to look up bounds for.
+		 * @param topic      The MQTT topic (for logging).
+		 * @param payload    The JSON payload string to verify.
+		 * @return true if the payload is within bounds, false if a violation is detected.
+		 */
+		bool verifyPayload(const std::string& projectId, const std::string& topic, const std::string& payload);
+
 	private:
 		BACKEND_COMMUNICATION::CommunicationService* _backendService = nullptr;
 		std::map<std::string, std::vector<std::string>> _userAcls;
+
+		/**
+		 * Data-Validation Layer A : Cached model bounds per project.
+		 * Key: projectId -> (attributeName -> ModelBounds)
+		 */
+		struct ModelBounds {
+			double min;
+			double max;
+		};
+		std::map<std::string, std::map<std::string, ModelBounds>> _boundsCache;
 		
 		struct DeviceConfig {
 			std::string deviceId;
@@ -82,6 +121,7 @@ namespace DIGITAL_TWIN_SERVER
 		};
 		// Maps API keys to device configurations
 		std::map<std::string, DeviceConfig> _deviceAcls;
+		mutable std::recursive_mutex _authMutex;
 
 		void loadAclConfig();
 
@@ -90,11 +130,5 @@ namespace DIGITAL_TWIN_SERVER
 		 * to be a project UUID for project-scoped topics.
 		 */
 		static std::string extractProjectId(std::string_view topic);
-
-		/**
-		 * Returns true if the topic is a framework-internal system topic
-		 * (e.g., "connectToTwin") that all authenticated users may access.
-		 */
-		static bool isSystemTopic(std::string_view topic);
 	};
 }

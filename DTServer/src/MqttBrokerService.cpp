@@ -53,7 +53,7 @@ namespace DIGITAL_TWIN_SERVER {
     }
 
     void MQTTBrokerService::accept_one() {
-        auto s = new Session(Context, Hub, authService);
+        auto s = std::make_shared<Session>(Context, _subscriptionStorage, authService);
         Acceptor.async_accept(s->lowest_layer(), [this, s](boost::system::error_code ec) {
             if (!ec) s->start();
             accept_one();
@@ -66,9 +66,9 @@ namespace DIGITAL_TWIN_SERVER {
             if (!ec) {
                 // Periodically publish a signed integrity token
                 // In a production system, this would be a hash of the binary signed by a TPM/HSM
-                std::string payload = "{\"status\":\"ok\", \"integrity_token\":\"MASTER_THESIS_2024_SECURE_DT\"}";
+                std::string payload = "{\"status\":\"ok\", \"integrity_token\":\"MASTER_THESIS_SECURE_DT\"}";
                 
-                Hub.forEachMatch("dt/system/integrity", nullptr, [&](Session* s) {
+                _subscriptionStorage.forEachMatch("dt/system/integrity", nullptr, [&](std::shared_ptr<Session> s) {
                     s->send_qos0_publish("dt/system/integrity", payload);
                 });
 

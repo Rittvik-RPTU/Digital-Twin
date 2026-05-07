@@ -17,26 +17,21 @@ namespace DIGITAL_TWIN_SERVER
     }
 
     void Session::start() {
-        _subscriptionStorage.add(this,"",false);
+        auto self = shared_from_this();
+        _subscriptionStorage.add(self,"",false);
         recv_connect();
     }
 
     void Session::stop() {
         if (_stopped) return;
         _stopped = true;
-        _subscriptionStorage.removeAll(this);
+        _subscriptionStorage.removeAll(shared_from_this());
         boost::system::error_code ec;
         ServerEndpoint->lowest_layer().close(ec);
-
-        // Safely schedule deletion so it doesn't delete itself inside an active callback
-        auto self = this;
-        boost::asio::post(ServerEndpoint->lowest_layer().get_executor(), [self]() {
-            delete self;
-        });
     }
 
     void Session::recv_connect() {
-        auto self = this;
+        auto self = shared_from_this();
         ServerEndpoint->async_recv([self](async_mqtt::error_code const& ec, std::optional<async_mqtt::packet_variant> pv_opt) {
             if (ec || !pv_opt) return self->stop();
 
@@ -114,7 +109,7 @@ namespace DIGITAL_TWIN_SERVER
     }
 
     void Session::recv_loop() {
-        auto self = this;
+        auto self = shared_from_this();
         ServerEndpoint->async_recv([self](async_mqtt::error_code const& ec, std::optional<async_mqtt::packet_variant> pv_opt) {
             if (ec || !pv_opt) return self->stop();
 
@@ -170,10 +165,29 @@ namespace DIGITAL_TWIN_SERVER
                         return;
                     }
 
+                    // --- Data-Validation Layer A: Model-Derived Payload Bounds Verification ---
+                    if (!self->_authService.isSystemTopic(topic)) {
+                        auto slashPos = topic.find('/');
+                        if (slashPos != std::string_view::npos) {
+                            std::string projectId = std::string(topic.substr(0, slashPos));
+                            if (!self->_authService.verifyPayload(projectId, topic, payload)) {
+                                std::cerr << "[Session][Layer A] Hard-bounds violation by " << self->_principal.id
+                                          << " on topic " << topic << " — disconnecting.\n";
+
+                                async_mqtt::v5::disconnect_packet dp{
+                                    async_mqtt::disconnect_reason_code::payload_format_invalid
+                                };
+                                self->ServerEndpoint->async_send(dp, [self](async_mqtt::error_code const&) { self->stop(); });
+                                return;
+                            }
+                        }
+                    }
+
+
                     std::cout << "PUBLISH topic=" << topic
                               << " payload_bytes=" << payload.size() << "\n";
 
-                    self->_subscriptionStorage.forEachMatch(topic, self, [topic, payload](Session* s) {
+                    self->_subscriptionStorage.forEachMatch(topic, self, [topic, payload](std::shared_ptr<Session> s) {
                         s->send_qos0_publish(topic, payload);
                     });
                 },
@@ -200,9 +214,5 @@ namespace DIGITAL_TWIN_SERVER
 
     boost::asio::ip::tcp::socket::lowest_layer_type & Session::lowest_layer() {
         return ServerEndpoint->lowest_layer();
-    }
-
-    bool Session::operator==(const Session &other) const {
-        return ClientId==other.ClientId;
     }
 }

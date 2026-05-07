@@ -1,93 +1,83 @@
 #!/usr/bin/env python3
 
-import subprocess
 import time
 import sys
+import threading
+import paho.mqtt.client as mqtt
 
 def print_header(text):
     print(f"\n{'='*50}\n{text}\n{'='*50}")
 
-def run_command(command, description, expect_failure=False):
-    print(f"\n[TEST] {description}")
-    print(f"Command: {command}")
-    
-    try:
-        result = subprocess.run(
-            command,
-            shell=True,
-            check=not expect_failure,
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
-        if result.returncode == 0:
-            print("[SUCCESS] Command succeeded as expected.")
-        elif expect_failure:
-             print(f"[SUCCESS] Command failed as expected (Exit code: {result.returncode}).")
-        else:
-             print(f"[ERROR] Command failed unexpectedly (Exit code: {result.returncode}).")
-             print(f"Stderr: {result.stderr}")
-    except subprocess.CalledProcessError as e:
-        if expect_failure:
-            print(f"[SUCCESS] Command failed as expected (Exit code: {e.returncode}).")
-        else:
-            print(f"[ERROR] Command failed unexpectedly (Exit code: {e.returncode}).")
-            print(f"Stderr: {e.stderr}")
-    except subprocess.TimeoutExpired:
-        if expect_failure:
-             print("[SUCCESS] Command timed out as expected (Connection killed).")
-        else:
-             print("[ERROR] Command timed out unexpectedly.")
-
 def main():
     print_header("Digital Twin Integrity & Security Test Suite")
-
     print("Please ensure the DigitalTwinServer and mock_agila_server are running before executing this script.")
-    print("Waiting 2 seconds...")
     time.sleep(2)
 
-    # Attack 1: Attempt to Spoof the Heartbeat (The "Man-in-the-Middle" attack)
-    # The attacker tries to publish a fake "OK" status to the integrity topic to fool monitors.
+    # Attack 1: Attempt to Spoof the Heartbeat
     print_header("Attack 1: Spoofing the Integrity Heartbeat")
-    run_command(
-        'mosquitto_pub -d -V 5 -h localhost -p 1883 -u testuser -P testpass -t "dt/system/integrity" -m "{\\"status\\":\\"fake_ok\\"}"',
-        "Attempting to publish to dt/system/integrity as a normal user",
-        expect_failure=True
-    )
+    print("Attempting to publish to dt/system/integrity as a normal user")
+    
+    def on_publish_spoof(client, userdata, mid, reason_code, properties):
+        if reason_code.is_failure:
+            print(f"[SUCCESS] Command failed as expected (Reason code: {reason_code})")
+        else:
+            print("[ERROR] Command succeeded unexpectedly! Server didn't block it.")
+        client.disconnect()
+
+    client1 = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, protocol=mqtt.MQTTv5)
+    client1.username_pw_set("testuser", "testpass")
+    client1.on_publish = on_publish_spoof
+    client1.connect("localhost", 1883)
+    client1.publish("dt/system/integrity", '{"status":"fake_ok"}')
+    client1.loop_forever()
 
     # Attack 2: Attempt to cause a Denial of Service (DoS) by spamming large payloads
     print_header("Attack 2: Resource Exhaustion / Large Packet")
     print("Generating a 50KB payload to stress the broker...")
-    
-    # We generate the payload natively in Python instead of using subshells to avoid OS arg limits
     large_payload = "A" * 50000 
     
-    run_command(
-        f'mosquitto_pub -d -V 5 -h localhost -p 1883 -u testuser -P testpass -t "dt/test" -m "{large_payload}"',
-        "Attempting to send a 50KB payload",
-        expect_failure=False # Broker should accept and drop it or handle it gracefully
-    )
+    def on_publish_dos(client, userdata, mid, reason_code, properties):
+        if not reason_code.is_failure:
+            print("[SUCCESS] Broker handled the payload gracefully.")
+        else:
+            print(f"[WARNING] Broker rejected the large payload: {reason_code}")
+        client.disconnect()
+
+    client2 = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, protocol=mqtt.MQTTv5)
+    client2.username_pw_set("testuser", "testpass")
+    client2.on_publish = on_publish_dos
+    client2.connect("localhost", 1883)
+    client2.publish("dt/test", large_payload)
+    client2.loop_forever()
 
     # Verification: Check if Heartbeat is still alive
     print_header("Verification: Is the Heartbeat Still Alive?")
     print("We will subscribe to the heartbeat topic. We expect to receive at least one heartbeat (sent every 10s).")
-    try:
-        # Use a generous timeout and exit on first message
-        result = subprocess.run(
-            'mosquitto_sub -V 5 -h localhost -p 1883 -u testuser -P testpass -t "dt/system/integrity" -C 1 -W 15',
-            shell=True,
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=16
-        )
+    
+    heartbeat_received = False
+    
+    def on_message(client, userdata, msg):
+        nonlocal heartbeat_received
+        heartbeat_received = True
         print("[SUCCESS] Received heartbeat payload:")
-        print(f"  {result.stdout.strip()}")
+        print(f"  {msg.payload.decode()}")
+        client.disconnect()
+        
+    client3 = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, protocol=mqtt.MQTTv5)
+    client3.username_pw_set("testuser", "testpass")
+    client3.on_message = on_message
+    client3.connect("localhost", 1883)
+    client3.subscribe("dt/system/integrity")
+    
+    start_time = time.time()
+    while time.time() - start_time < 12 and not heartbeat_received:
+        client3.loop(0.1)
+
+    if heartbeat_received:
         print("Conclusion: The server survived the attacks and the heartbeat is functioning normally.")
-    except subprocess.TimeoutExpired:
+    else:
         print("[ERROR] Failed to receive heartbeat within 12 seconds. The server might be compromised or frozen!")
-    except subprocess.CalledProcessError as e:
-         print(f"[ERROR] Failed to subscribe to heartbeat: {e.stderr}")
 
 if __name__ == "__main__":
     main()
+

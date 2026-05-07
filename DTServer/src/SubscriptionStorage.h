@@ -10,7 +10,7 @@ namespace DIGITAL_TWIN_SERVER
 	class Session;
 
 	struct SubscriptionEntry {
-		Session* Session;
+		std::shared_ptr<Session> Session;
 		std::string Filter;
 		bool NoLocal = false;
 	};
@@ -21,13 +21,13 @@ namespace DIGITAL_TWIN_SERVER
 		SubscriptionStorage() = default;
 		~SubscriptionStorage() = default;
 
-		void add(Session* session, std::string filter, bool no_local);
-		void removeAll(Session* session);
+		void add(std::shared_ptr<Session> session, std::string filter, bool no_local);
+		void removeAll(std::shared_ptr<Session> session);
 		bool matchFilter(std::string_view filter, std::string_view topic);
 		static std::vector<std::string_view>  split(std::string_view s);
 
 		template<class F>
-		void forEachMatch(std::string_view topic, Session const* publisher, F&& function)
+		void forEachMatch(std::string_view topic, std::shared_ptr<Session> publisher, F&& function)
 		{
 			std::lock_guard lg(Mutex);
 			for (auto it = Subscriptions.begin(); it != Subscriptions.end();)

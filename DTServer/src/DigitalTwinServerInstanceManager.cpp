@@ -53,6 +53,7 @@ namespace DIGITAL_TWIN_SERVER {
         createDTTopicAndCallback();
 
         mqttBrokerThread.join();
+        if (mqttClientThread.joinable()) mqttClientThread.join();
     }
 
     int DigitalTwinServerInstanceManager::getRunTimeCode() {

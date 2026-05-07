@@ -8,7 +8,7 @@
 
 namespace DIGITAL_TWIN_SERVER
 {
-	class Session
+	class Session : public std::enable_shared_from_this<Session>
 	{
 	public:
 		Session() = delete;
@@ -21,7 +21,6 @@ namespace DIGITAL_TWIN_SERVER
 		void recv_loop();
 		void send_qos0_publish(std::string const& topic, std::string const& payload);
 		boost::asio::ip::tcp::socket::lowest_layer_type& lowest_layer();
-		bool operator==(const Session &) const;
 
 	private:
 		async_mqtt::endpoint<async_mqtt::role::server, async_mqtt::protocol::mqtt>* ServerEndpoint;
