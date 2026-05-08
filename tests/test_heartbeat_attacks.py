@@ -4,6 +4,10 @@ import time
 import sys
 import threading
 import paho.mqtt.client as mqtt
+import os
+
+MQTT_USER = os.environ.get("DT_USERNAME", "testuser")
+MQTT_PASS = os.environ.get("DT_PASSWORD", "testpass")
 
 def print_header(text):
     print(f"\n{'='*50}\n{text}\n{'='*50}")
@@ -33,7 +37,7 @@ def main():
             print(f"[WARNING] Disconnected with unexpected code: {reason_code}")
 
     client1 = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, protocol=mqtt.MQTTv5)
-    client1.username_pw_set("testuser", "testpass")
+    client1.username_pw_set(MQTT_USER, MQTT_PASS)
     client1.on_publish = on_publish_spoof
     client1.on_disconnect = on_disconnect_spoof
     client1.connect("localhost", 1883)
@@ -60,7 +64,7 @@ def main():
         client.disconnect()
 
     client2 = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, protocol=mqtt.MQTTv5)
-    client2.username_pw_set("testuser", "testpass")
+    client2.username_pw_set(MQTT_USER, MQTT_PASS)
     client2.on_publish = on_publish_dos
     client2.connect("localhost", 1883)
     client2.publish("dt/test", large_payload)
@@ -80,7 +84,7 @@ def main():
         client.disconnect()
         
     client3 = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, protocol=mqtt.MQTTv5)
-    client3.username_pw_set("testuser", "testpass")
+    client3.username_pw_set(MQTT_USER, MQTT_PASS)
     client3.on_message = on_message
     client3.connect("localhost", 1883)
     client3.subscribe("dt/system/integrity")

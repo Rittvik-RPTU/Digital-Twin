@@ -18,7 +18,12 @@ try:
 except AttributeError:
     client = mqtt.Client(protocol=mqtt.MQTTv5)
 
-client.username_pw_set("testuser", "testpass")
+import os
+
+MQTT_USER = os.environ.get("DT_USERNAME", "testuser")
+MQTT_PASS = os.environ.get("DT_PASSWORD", "testpass")
+
+client.username_pw_set(MQTT_USER, MQTT_PASS)
 client.connect(BROKER_HOST, 1883)
 
 def publish(temp, speed, label=""):
