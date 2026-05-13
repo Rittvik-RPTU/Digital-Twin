@@ -32,16 +32,34 @@ def publish(temp, speed, label=""):
     print(f"  [{label}] temp={temp:.1f}°C  speed={speed:.1f} km/h")
     time.sleep(0.1)
 
-print("\n── Phase 1: Baseline (50 normal messages) ──────────────────")
-for i in range(50):
-    temp  = 50.0 + random.uniform(-1.0, 1.0)   # 49–51°C
-    speed = 80.0 + random.uniform(-2.0, 2.0)   # 78–82 km/h
-    publish(temp, speed, label="NORMAL")
+import csv
 
-print("\n── Phase 2: Layer A Test — Hard-bounds violation ────────────")
-print("  Sending temperature=150°C  (expect DISCONNECT from broker)")
-publish(150.0, 80.0, label="LAYER-A ATTACK")
+csv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "hybrid_prototype", "telemetry_dataset.csv")
+
+print(f"\n── Starting Telemetry Simulation from Research Dataset ──")
+print(f"Reading from: {csv_path}\n")
+
+try:
+    with open(csv_path, mode='r') as file:
+        reader = csv.DictReader(file)
+        
+        # Adding a small hard-bounds attack at the end manually just to prove Layer A works
+        rows = list(reader)
+        rows.append({"time": "999", "speed": "80.0", "temperature": "150.0", "label": "LAYER-A HARD ATTACK"})
+        
+        for row in rows:
+            temp = float(row['temperature'])
+            speed = float(row['speed'])
+            label = row['label']
+            
+            publish(temp, speed, label=label)
+            
+            # If the broker disconnects us (e.g. Layer A kills connection), paho-mqtt might throw or we might just need to reconnect.
+            # But for this simple script, we just let it run. If it fails, the user will see it in the broker logs.
+
+except FileNotFoundError:
+    print(f"Error: Could not find the dataset at {csv_path}")
+
 time.sleep(1)
-
 client.disconnect()
 print("\nSimulation complete.")

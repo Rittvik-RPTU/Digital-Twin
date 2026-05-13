@@ -128,6 +128,33 @@ namespace BACKEND_COMMUNICATION {
         return returnValue;
     }
 
+    std::vector<boost::uuids::uuid> CommunicationService::getAccessibleProjectIds(const std::string& username, const std::string& password) {
+        std::string barrier;
+        SysMLv2::API::SysMLAPIImplementation* tempApi;
+        if ((Port!=443)&&(Port!=80))
+            tempApi = new SysMLv2::API::SysMLAPIImplementation(REST_Protocol + ServerAddress + ":" + std::to_string(Port) + "/");
+        else
+            tempApi = new SysMLv2::API::SysMLAPIImplementation(REST_Protocol + ServerAddress);
+            
+        barrier = tempApi->loginUserWithPassword(username, password);
+        if (barrier.empty()) {
+            delete tempApi;
+            return {};
+        }
+        
+        auto projects = tempApi->getAllProjects(barrier);
+        std::vector<boost::uuids::uuid> projectIds;
+        for (auto proj : projects) {
+            auto restProj = std::dynamic_pointer_cast<SysMLv2::REST::Project>(proj);
+            if (restProj) {
+                projectIds.push_back(restProj->getId());
+            }
+        }
+        delete tempApi;
+        return projectIds;
+    }
+
+
     std::vector<std::shared_ptr<KerML::Entities::Element>>
     CommunicationService::getAllElementsOfCommit(boost::uuids::uuid projectId, boost::uuids::uuid commitId) {
         auto elements = APIImplementation->getAllElementsFromCommit(boost::lexical_cast<std::string>(projectId),boost::lexical_cast<std::string>(commitId), BarrierString);

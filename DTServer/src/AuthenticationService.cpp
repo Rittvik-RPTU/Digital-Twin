@@ -94,32 +94,23 @@ namespace DIGITAL_TWIN_SERVER
 				}
 			}
 
-			// Step 1: Authenticate human users against the SysML v2 backend
-			bool loginSuccess = _backendService->setUserForLoginInBackend(username, password);
-			if (!loginSuccess) {
-				std::cout << "[AuthService] Login failed for user: " << username << "\n";
+			// Step 1 & 2: Authenticate human users against the SysML v2 backend and get their accessible projects dynamically
+			std::vector<boost::uuids::uuid> accessibleProjects = _backendService->getAccessibleProjectIds(username, password);
+			if (accessibleProjects.empty()) {
+				std::cout << "[AuthService] Login failed or no projects found for user: " << username << "\n";
 				return false;
 			}
 
-			// Step 2: Retrieve projects visible to this authenticated user from LOCAL ACL
 			std::vector<std::string> projectIds;
-			auto it = _userAcls.find(username);
-			if (it != _userAcls.end()) {
-				projectIds = it->second;
-			} else {
-				std::cout << "[AuthService] User " << username << " authenticated but not found in local ACL.\n";
-			}
-
-			// A user with no accessible projects has no reason to connect
-			if (projectIds.empty()) {
-				std::cout << "[AuthService] User " << username << " authenticated but has no projects.\n";
+			for (const auto& uuid : accessibleProjects) {
+			    projectIds.push_back(boost::lexical_cast<std::string>(uuid));
 			}
 
 			outPrincipal.id = username;
 			outPrincipal.authorizedProjectIds = std::move(projectIds);
 			outPrincipal.isPhysicalTwin = false;
 
-			std::cout << "[AuthService] User " << username << " authenticated with "
+			std::cout << "[AuthService] User " << username << " authenticated dynamically with "
 			          << outPrincipal.authorizedProjectIds.size() << " project(s).\n";
 			return true;
 

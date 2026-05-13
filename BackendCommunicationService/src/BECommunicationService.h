@@ -154,6 +154,13 @@ namespace BACKEND_COMMUNICATION {
         bool setUserForLoginInBackend(std::string username, std::string password);
 
         /**
+         * Authenticates user and returns the project IDs they can access.
+         * Uses only standard SysML v2 API calls (login + getAllProjects).
+         */
+        std::vector<boost::uuids::uuid> getAccessibleProjectIds(
+            const std::string& username, const std::string& password);
+
+        /**
          *
          * @param digitalTwin
          * @return
