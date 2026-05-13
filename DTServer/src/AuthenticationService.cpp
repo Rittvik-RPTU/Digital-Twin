@@ -70,24 +70,34 @@ namespace DIGITAL_TWIN_SERVER
 				return _apiKeyStore.validateApiKey(password, outPrincipal);
 			}
 
-			// Step 1 & 2: Authenticate human users against the SysML v2 backend and get their accessible projects dynamically
-			std::vector<boost::uuids::uuid> accessibleProjects = _backendService->getAccessibleProjectIds(username, password);
-			if (accessibleProjects.empty()) {
-				std::cout << "[AuthService] Login failed or no projects found for user: " << username << "\n";
+			// Step 1: Verify identity against the SysML v2 backend.
+			// We call getAccessibleProjectIds which internally logs in and calls GET /projects.
+			// NOTE: The reference SysML v2 backend has a known gap — it returns ALL projects
+			// globally regardless of the authenticated user. Therefore, we use the backend
+			// strictly for IDENTITY VERIFICATION (login success/failure) and discard its project list.
+			std::vector<boost::uuids::uuid> backendProjects = _backendService->getAccessibleProjectIds(username, password);
+			if (backendProjects.empty()) {
+				// A completely empty result means the login itself failed (401 Unauthorized).
+				std::cout << "[AuthService] Identity verification failed for user: " << username << "\n";
 				return false;
 			}
 
-			std::vector<std::string> projectIds;
-			for (const auto& uuid : accessibleProjects) {
-			    projectIds.push_back(boost::lexical_cast<std::string>(uuid));
+			// Step 2: Enforce authorization using the local ACL (users_acl.json).
+			// This compensates for the SysML v2 backend's lack of user-scoped project filtering.
+			// This is the documented "Hybrid Two-Step Validation" strategy.
+			auto aclIt = _userAcls.find(username);
+			if (aclIt == _userAcls.end()) {
+				std::cout << "[AuthService] User '" << username
+				          << "' authenticated on backend but has no local ACL entry. Access denied.\n";
+				return false;
 			}
 
 			outPrincipal.id = username;
-			outPrincipal.authorizedProjectIds = std::move(projectIds);
+			outPrincipal.authorizedProjectIds = aclIt->second;
 			outPrincipal.isPhysicalTwin = false;
 
-			std::cout << "[AuthService] User " << username << " authenticated dynamically with "
-			          << outPrincipal.authorizedProjectIds.size() << " project(s).\n";
+			std::cout << "[AuthService] User " << username << " authenticated (Hybrid) with "
+			          << outPrincipal.authorizedProjectIds.size() << " ACL-scoped project(s).\n";
 			return true;
 
 		} catch (const std::exception& ex) {
