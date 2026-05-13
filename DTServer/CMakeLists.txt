@@ -13,7 +13,9 @@ add_executable(DigitalTwinServer
         src/Session.h
         src/Session.cpp
         src/SubscriptionStorage.h
-        src/SubscriptionStorage.cpp)
+        src/SubscriptionStorage.cpp
+        src/ApiKeyStore.h
+        src/ApiKeyStore.cpp)
 
 target_include_directories(DigitalTwinServer PUBLIC
         ../BackendCommunicationService/src/

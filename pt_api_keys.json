@@ -1,0 +1,10 @@
+{
+    "sk-pt-a1b2c3d4": {
+        "device_id": "motor-1",
+        "project": "990e8400-e29b-41d4-a716-999999999999"
+    },
+    "sk-pt-e5f6g7h8": {
+        "device_id": "sensor-2",
+        "project": "990e8400-e29b-41d4-a716-999999999999"
+    }
+}

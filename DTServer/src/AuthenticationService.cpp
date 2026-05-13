@@ -45,20 +45,8 @@ namespace DIGITAL_TWIN_SERVER
 				_userAcls[username] = projects;
 			}
 			
-			_deviceAcls.clear();
-			auto devicesOpt = pt.get_child_optional("devices");
-			if (devicesOpt) {
-				for (auto& device : *devicesOpt) {
-					std::string apiKey = device.first;
-					DeviceConfig config;
-					config.deviceId = device.second.get<std::string>("device_id");
-					config.projectId = device.second.get<std::string>("project");
-					_deviceAcls[apiKey] = config;
-				}
-			}
 			
-			std::cout << "[AuthService] Loaded ACL config with " << _userAcls.size() << " users and " 
-			          << _deviceAcls.size() << " devices.\n";
+			std::cout << "[AuthService] Loaded ACL config with " << _userAcls.size() << " users.\n";
 		} catch (const std::exception& e) {
 			std::cerr << "[AuthService] Failed to load ACL config from users_acl.json: " << e.what() << "\n";
 		}
@@ -79,19 +67,7 @@ namespace DIGITAL_TWIN_SERVER
 			// Phase 3: Physical Twin API Key Authentication
 			if (username == "PHYSICAL_TWIN") {
 				// The password field contains the API Key
-				auto it = _deviceAcls.find(password);
-				if (it != _deviceAcls.end()) {
-					outPrincipal.id = it->second.deviceId;
-					outPrincipal.authorizedProjectIds = { it->second.projectId };
-					outPrincipal.isPhysicalTwin = true;
-					
-					std::cout << "[AuthService] Physical Twin '" << outPrincipal.id 
-					          << "' authenticated successfully via API Key.\n";
-					return true;
-				} else {
-					std::cout << "[AuthService] Physical Twin authentication failed: Invalid API Key.\n";
-					return false;
-				}
+				return _apiKeyStore.validateApiKey(password, outPrincipal);
 			}
 
 			// Step 1 & 2: Authenticate human users against the SysML v2 backend and get their accessible projects dynamically

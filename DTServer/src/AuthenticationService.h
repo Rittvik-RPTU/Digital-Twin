@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <mutex>
+#include "ApiKeyStore.h"
 
 // Forward declaration to avoid circular includes
 namespace BACKEND_COMMUNICATION {
@@ -115,12 +116,7 @@ namespace DIGITAL_TWIN_SERVER
 		};
 		std::map<std::string, std::map<std::string, ModelBounds>> _boundsCache;
 		
-		struct DeviceConfig {
-			std::string deviceId;
-			std::string projectId;
-		};
-		// Maps API keys to device configurations
-		std::map<std::string, DeviceConfig> _deviceAcls;
+		ApiKeyStore _apiKeyStore;
 		mutable std::recursive_mutex _authMutex;
 
 		void loadAclConfig();
