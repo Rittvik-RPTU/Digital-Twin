@@ -114,7 +114,9 @@ DB = {
                 "declaredName": "temperature",
                 "visibility": "public",
                 "lowerBound": 0.0,
-                "upperBound": 120.0
+                "upperBound": 120.0,
+                "body": "",
+                "language": "SysML"
             },
             {
                 "@id": "880e8400-e29b-41d4-a716-000000000004",
@@ -124,7 +126,9 @@ DB = {
                 "declaredName": "speed",
                 "visibility": "public",
                 "lowerBound": 0.0,
-                "upperBound": 250.0
+                "upperBound": 250.0,
+                "body": "",
+                "language": "SysML"
             },
             {
                 "@id": "880e8400-e29b-41d4-a716-000000000005",
@@ -134,7 +138,9 @@ DB = {
                 "declaredName": "chargeLevel",
                 "visibility": "public",
                 "lowerBound": 0.0,
-                "upperBound": 100.0
+                "upperBound": 100.0,
+                "body": "",
+                "language": "SysML"
             }
         ]
     }

@@ -74,11 +74,11 @@ namespace DigitalTwin::Client {
         const char *RESTServerIdentifier = "RESTServer";
         const QString DefaultRESTServer = "localhost";
         const char *RESTPortIdentifier = "RESTPort";
-        const QString DefaultRESTPort = "8080";
+        const QString DefaultRESTPort = "8088";
         const char *RESTLoginIdentifier = "RESTLogin";
-        const QString DefaultRESTLogin = "admin@cps.de";
+        const QString DefaultRESTLogin = "admin";
         const char *RESTFolderIdentifier = "RESTFolder";
-        const QString DefaultRestFolder = "/agila-server/";
+        const QString DefaultRestFolder = "/";
         const char *RESTPasswordIdentifier = "RESTPassword";
         const QString DefaultRESTPassword = "admin";
         const char *MQTTServerIdentifier = "MQTTServer";

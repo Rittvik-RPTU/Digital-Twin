@@ -19,7 +19,7 @@ namespace DigitalTwin::Client {
 
         if (getRESTServer().isEmpty())
             resetToDefault();
-        if (getRESTFolder().isEmpty())
+        if (getRESTFolder().isEmpty() || getRESTFolder() == "/agila-server/")
             Settings->setValue(RESTFolderIdentifier,DefaultRestFolder);
     }
 
@@ -30,6 +30,7 @@ namespace DigitalTwin::Client {
         Settings->setValue(MQTTPortIdentifier, DefaultMQTTPort);
         Settings->setValue(RESTLoginIdentifier,DefaultRESTLogin);
         Settings->setValue(RESTPasswordIdentifier, DefaultRESTPassword);
+        Settings->setValue(RESTFolderIdentifier, DefaultRestFolder);
         Settings->sync();
     }
 
