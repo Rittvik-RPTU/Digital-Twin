@@ -214,7 +214,7 @@ class MockSysMLHandler(BaseHTTPRequestHandler):
                         "@type": "Project",
                         "name": f"Dynamic_Project_{pid[:8]}",
                         "description": f"Automatically generated for user {requesting_user}",
-                        "defaultBranch": {"@id": f"branch-{pid[:8]}", "@type": "Branch", "name": "main"}
+                        "defaultBranch": {"@id": f"{pid[:8]}-1111-2222-3333-666666666666", "@type": "Branch", "name": "main"}
                     })
             
             self._send_json(200, all_projects)
@@ -230,10 +230,10 @@ class MockSysMLHandler(BaseHTTPRequestHandler):
             if not branches:
                 # Synthesize a branch if not in DB but looks like an ACL project
                 branches = [{
-                    "@id": f"branch-{pid[:8]}",
+                    "@id": f"{pid[:8]}-1111-2222-3333-666666666666",
                     "@type": "Branch",
                     "name": "main",
-                    "head": {"@id": f"commit-{pid[:8]}", "@type": "Commit"}
+                    "head": {"@id": f"{pid[:8]}-1111-2222-3333-777777777777", "@type": "Commit"}
                 }]
             self._send_json(200, branches)
             return
@@ -261,7 +261,18 @@ class MockSysMLHandler(BaseHTTPRequestHandler):
         # Fallback / twins
         
         if self.path.endswith('/twins'):
-            self._send_json(200, [])
+            # Extract Project ID from path
+            pid_match = re.search(r'/projects/([^/]+)/twins$', self.path)
+            pid = pid_match.group(1) if pid_match else "unknown"
+            
+            fake_twin = [{
+                "@id": f"{pid[:8]}-1111-2222-3333-444444444444",
+                "@type": "Twin",
+                "name": "Simulated Live Twin",
+                "taggedCommit": {"@id": f"{pid[:8]}-1111-2222-3333-555555555555"},
+                "owningProject": {"@id": pid}
+            }]
+            self._send_json(200, fake_twin)
             return
 
         # If route not found

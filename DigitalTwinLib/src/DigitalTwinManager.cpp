@@ -52,7 +52,13 @@ namespace DigitalTwin {
     Model::DigitalTwinModel* DigitalTwinManager::addDigitalTwinAndCreateModel(std::shared_ptr<SysMLv2::REST::DigitalTwin> digitalTwin) {
         Model::DigitalTwinModel* returnValue = new Model::DigitalTwinModel(digitalTwin,this);
         DigitalTwinModelMap.insert(std::make_pair(digitalTwin->getId(),returnValue));
-        PHYSICAL_TWIN_COMMUNICATION::DigitalTwinEntity entity(digitalTwin->getId(), digitalTwin->owningProject()->getId());
+        boost::uuids::uuid projectId = boost::uuids::nil_uuid();
+        if (digitalTwin->owningProject() != nullptr) {
+            projectId = digitalTwin->owningProject()->getId();
+        } else {
+            std::cout << "[DigitalTwinManager] Warning: owningProject is null for twin " << digitalTwin->getName() << std::endl;
+        }
+        PHYSICAL_TWIN_COMMUNICATION::DigitalTwinEntity entity(digitalTwin->getId(), projectId);
         ClientService->publish(PHYSICAL_TWIN_COMMUNICATION::CONNECT_TO_TWIN, entity.serialize());
         return returnValue;
     }

@@ -6,5 +6,9 @@
     "sk-pt-e5f6g7h8": {
         "device_id": "sensor-2",
         "project": "990e8400-e29b-41d4-a716-999999999999"
+    },
+    "pt-secret-key-01": {
+        "device_id": "sensor-01",
+        "project": "990e8400-e29b-41d4-a716-999999999999"
     }
 }
