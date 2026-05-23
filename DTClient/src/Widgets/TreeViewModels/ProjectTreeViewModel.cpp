@@ -124,6 +124,5 @@ namespace DigitalTwin::Client::ViewModels {
         RootItem->clearChildItems();
         Projects.clear();
         endRemoveRows();
-        removeRows(0, lastElement, index(0,0));
     }
 }

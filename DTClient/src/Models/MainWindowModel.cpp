@@ -13,6 +13,15 @@
 #include <sysmlv2/rest/entities/Commit.h>
 #include <kerml/root/elements/Element.h>
 
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QSet>
+#include <QDir>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/lexical_cast.hpp>
+
 #include "MainWindowModel.h"
 #include "DigitalTwinClientSettings.h"
 #include "../Widgets/DigitalTwinMainWindow.h"
@@ -112,7 +121,69 @@ namespace DigitalTwin::Client {
     }
 
     void MainWindowModel::refreshProjects() {
-        Projects = BackendCommunication->getAllProjects();
+        auto rawProjects = BackendCommunication->getAllProjects();
+        Projects.clear();
+
+        QString username = QString::fromStdString(Settings->getRESTUserAsString());
+        QString aclFileName = "users_acl.json";
+        QString aclFilePath = "";
+
+        // Traverse up parent directories to find users_acl.json (relative lookup)
+        QDir dir = QDir::current();
+        for (int i = 0; i < 5; ++i) {
+            if (dir.exists(aclFileName)) {
+                aclFilePath = dir.absoluteFilePath(aclFileName);
+                break;
+            }
+            if (!dir.cdUp()) {
+                break;
+            }
+        }
+
+        if (aclFilePath.isEmpty()) {
+            qDebug() << "[GUI] users_acl.json not found in hierarchy, allowing all projects.";
+            Projects = rawProjects;
+        } else {
+            qDebug() << "[GUI] Loading Access Control List from:" << aclFilePath;
+            QFile file(aclFilePath);
+            if (file.open(QIODevice::ReadOnly)) {
+                QByteArray data = file.readAll();
+                file.close();
+
+                QJsonDocument doc = QJsonDocument::fromJson(data);
+                QJsonObject root = doc.object();
+                QJsonObject users = root.value("users").toObject();
+
+                if (users.contains(username)) {
+                    QJsonObject userObj = users.value(username).toObject();
+                    QJsonArray projArray = userObj.value("projects").toArray();
+                    QSet<QString> allowedUuids;
+                    for (int i = 0; i < projArray.size(); ++i) {
+                        allowedUuids.insert(projArray.at(i).toString().toLower());
+                    }
+
+                    bool isSuperAdmin = allowedUuids.contains("*");
+
+                    qDebug() << "[GUI] Filtering projects for user:" << username << "(Super Admin:" << isSuperAdmin << ")";
+                    for (const auto& proj : rawProjects) {
+                        std::string stdUuid = boost::lexical_cast<std::string>(proj->getId());
+                        QString qUuid = QString::fromStdString(stdUuid).toLower();
+                        if (isSuperAdmin || allowedUuids.contains(qUuid)) {
+                            Projects.push_back(proj);
+                            qDebug() << "[GUI] Access GRANTED for project:" << proj->getName().c_str();
+                        } else {
+                            qDebug() << "[GUI] Access DENIED for project:" << proj->getName().c_str();
+                        }
+                    }
+                } else {
+                    qDebug() << "[GUI] User" << username << "not defined in ACL, allowing NO projects.";
+                }
+            } else {
+                qDebug() << "[GUI] Failed to read users_acl.json, allowing all projects.";
+                Projects = rawProjects;
+            }
+        }
+
         ProjectViewModel->clearAllElements();
         DigitalTwinMap.clear();
         ProjectViewModel->setProjects(Projects);

@@ -115,6 +115,11 @@ namespace DIGITAL_TWIN_SERVER
 		std::string projectId = extractProjectId(filter);
 		if (projectId.empty()) return true; // No project prefix → system-level
 
+		// Wildcard check for super-admin access
+		if (std::find(p.authorizedProjectIds.begin(), p.authorizedProjectIds.end(), "*") != p.authorizedProjectIds.end()) {
+			return true;
+		}
+
 		// Check if the project is in the principal's authorized set
 		return std::find(
 			p.authorizedProjectIds.begin(),
@@ -135,6 +140,11 @@ namespace DIGITAL_TWIN_SERVER
 
 		std::string projectId = extractProjectId(topic);
 		if (projectId.empty()) return true; // No project prefix → system-level
+
+		// Wildcard check for super-admin access
+		if (std::find(p.authorizedProjectIds.begin(), p.authorizedProjectIds.end(), "*") != p.authorizedProjectIds.end()) {
+			return true;
+		}
 
 		// For Physical Twins: additionally restrict to device-owned topics
 		if (p.isPhysicalTwin) {

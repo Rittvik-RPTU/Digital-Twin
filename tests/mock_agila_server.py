@@ -18,6 +18,8 @@ try:
                 VALID_USERS["admin"] = "admin"
             elif username == "testuser":
                 VALID_USERS["testuser"] = "testpass"
+            elif username == "superadmin":
+                VALID_USERS["superadmin"] = "superadmin"
             else:
                 # For any other user, the password is 'pass'
                 VALID_USERS[username] = "pass"
@@ -189,31 +191,34 @@ class MockSysMLHandler(BaseHTTPRequestHandler):
             if 'mock-token-' in auth_header:
                 requesting_user = auth_header.split('mock-token-')[-1]
             
-            # Load allowed projects for this user from ACL
-            allowed_pids = []
+            # Gather all projects globally across all users in the ACL to simulate the standard API gap
+            global_pids = set(DB["projects"].keys())
             try:
                 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                 acl_path = os.path.join(base_dir, 'users_acl.json')
                 with open(acl_path, 'r') as f:
                     acl_data = json.load(f)
-                    allowed_pids = acl_data.get('users', {}).get(requesting_user, {}).get('projects', [])
+                    for u_entry in acl_data.get('users', {}).values():
+                        for pid in u_entry.get('projects', []):
+                            global_pids.add(pid)
             except: pass
 
             all_projects = []
             
-            # Only add projects from DB if they are in the user's allowed list
+            # Add database projects
             for pid, project_obj in DB["projects"].items():
-                if pid in allowed_pids:
-                    all_projects.append(project_obj)
+                all_projects.append(project_obj)
             
-            # Synthesize other projects from ACL if they belong to this specific user
-            for pid in allowed_pids:
+            # Add other projects from ACL (simulating the global leaky view)
+            for pid in global_pids:
+                if pid == "*":
+                    continue
                 if pid not in DB["projects"]:
                     all_projects.append({
                         "@id": pid,
                         "@type": "Project",
-                        "name": f"Dynamic_Project_{pid[:8]}",
-                        "description": f"Automatically generated for user {requesting_user}",
+                        "name": f"Global_Project_{pid[:8]}",
+                        "description": "Global project leaked by standard SysML v2 REST endpoint",
                         "defaultBranch": {"@id": f"{pid[:8]}-1111-2222-3333-666666666666", "@type": "Branch", "name": "main"}
                     })
             
