@@ -64,8 +64,14 @@ class FuzzyTrustEngine:
 if __name__ == "__main__":
     print("Testing FAAD Pipeline (Z-Score + Isolation Forest -> Fuzzy Engine)...")
     
-    # 1. Load Data
-    df = pd.read_csv("telemetry_dataset.csv")
+    # 1. Load/Generate Data Dynamically (Randomized on each run)
+    try:
+        from data_generator import generate_telemetry_data
+        df = generate_telemetry_data(randomize=True)
+        df.to_csv("telemetry_dataset.csv", index=False)
+    except Exception as e:
+        print(f"Warning: Could not generate data dynamically ({e}). Loading fallback CSV.")
+        df = pd.read_csv("telemetry_dataset.csv")
     
     # 2. Initialize Pipeline
     z_monitor = ZScoreMonitor(window_size=30)

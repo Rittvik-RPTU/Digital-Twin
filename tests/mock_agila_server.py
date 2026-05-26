@@ -5,7 +5,23 @@ from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
 
 import os
 
-# 1. Load Valid Users from ACL
+# 1. Define Bounds Model for Payload Validation
+
+BOUNDS_MODELS = {
+    # Test/Standard User Project - Electric Car Attributes
+    "990e8400-e29b-41d4-a716-999999999999": {
+        "temperature": {"min": 0.0, "max": 120.0, "unit": "°C"},
+        "speed": {"min": 0.0, "max": 250.0, "unit": "km/h"},
+        "chargeLevel": {"min": 0.0, "max": 100.0, "unit": "%"}
+    },
+    # Admin Confidential Project - Drone Attributes
+    "550e8400-e29b-41d4-a716-446655440000": {
+        "stealthLevel": {"min": 0.0, "max": 10.0, "unit": "level"},
+        "altitude": {"min": 0.0, "max": 50000.0, "unit": "meters"}
+    }
+}
+
+# 2. Load Valid Users from ACL
 
 VALID_USERS = {}
 try:
@@ -28,7 +44,7 @@ except Exception as e:
     VALID_USERS = {"admin": "admin", "testuser": "testpass"}
 
 
-# 2. Mock Data Database (Proper Hierarchy)
+# 3. Mock Data Database (Proper Hierarchy)
 
 
 # Admin's Confidential Data
@@ -154,11 +170,43 @@ USER_PROJECT_OWNERSHIP = {
     "testuser": [TEST_PROJECT_ID]
 }
 
-
-# 3. Request Handler
+# 4. Request Handler
 
 class MockSysMLHandler(BaseHTTPRequestHandler):
-    
+
+    def _generate_attribute_usage_elements(self, project_id):
+        """Generate AttributeUsage elements from BOUNDS_MODELS.
+
+        Each attribute becomes a TextualRepresentation element with lowerBound/upperBound.
+        This allows AuthenticationService to fetch bounds dynamically from the mock server.
+        """
+        elements = []
+
+        if project_id not in BOUNDS_MODELS:
+            return elements  # No bounds defined for this project
+
+        element_id_base = project_id[:8]  # Use first 8 chars of project UUID
+        counter = 3  # Start from 3 to avoid conflicts with static elements
+
+        for attr_name, bounds_info in BOUNDS_MODELS[project_id].items():
+            element = {
+                "@id": f"{element_id_base}400-e29b-41d4-a716-00000000000{counter}",
+                "@type": "TextualRepresentation",
+                "kind": "AttributeUsage",
+                "name": attr_name,
+                "declaredName": attr_name,
+                "visibility": "public",
+                "lowerBound": bounds_info["min"],
+                "upperBound": bounds_info["max"],
+                "unit": bounds_info.get("unit", ""),
+                "body": f"attribute {attr_name} : Real;",
+                "language": "SysML"
+            }
+            elements.append(element)
+            counter += 1
+
+        return elements
+
     def _get_user_from_token(self):
         auth_header = self.headers.get('Authorization', '')
         if 'mock-token-' in auth_header:
@@ -245,20 +293,29 @@ class MockSysMLHandler(BaseHTTPRequestHandler):
 
         
         # Route: GET /projects/{projectId}/commits/{commitId}/elements
-        
-        elements_match = re.search(r'/projects/[^/]+/commits/([^/]+)/elements$', self.path)
+
+        elements_match = re.search(r'/projects/([^/]+)/commits/([^/]+)/elements$', self.path)
         if elements_match:
-            cid = elements_match.group(1)
-            elements = DB["elements"].get(cid, [])
+            project_id = elements_match.group(1)
+            commit_id = elements_match.group(2)
+
+            # First, check if elements are in DB (static test data)
+            elements = DB["elements"].get(commit_id, [])
+
+            # If not in DB, generate bounds from BOUNDS_MODELS
             if not elements:
-                # Synthesize a fake car part with valid hex UUIDs
+                elements = self._generate_attribute_usage_elements(project_id)
+
+            # If still no elements, synthesize a generic part
+            if not elements:
                 elements = [{
-                    "@id": f"{cid[:32]}ffff", # Ensure 36 chars if cid is shorter, but cid is 36.
+                    "@id": f"{commit_id[:32]}ffff",
                     "@type": "TextualRepresentation",
                     "declaredName": "DynamicPart",
                     "body": "part DynamicPart { \n  attribute data : Scalar;\n}",
                     "language": "SysML"
                 }]
+
             self._send_json(200, elements)
             return
 

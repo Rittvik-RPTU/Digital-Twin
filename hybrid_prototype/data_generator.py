@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-def generate_telemetry_data(num_samples=500):
+def generate_telemetry_data(num_samples=500, randomize=False):
     """
     Generates synthetic telemetry data for the Digital Twin FAAD prototype.
     Contains three phases:
@@ -11,7 +11,10 @@ def generate_telemetry_data(num_samples=500):
     2. Statistical Spike (Sudden temperature jump)
     3. Contextual Anomaly (High temperature while speed is zero)
     """
-    np.random.seed(42)
+    if randomize:
+        np.random.seed(None)
+    else:
+        np.random.seed(42)
     
     # Initialize arrays
     time_steps = np.arange(num_samples)

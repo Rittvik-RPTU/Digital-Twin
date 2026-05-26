@@ -5,6 +5,8 @@
 #include <vector>
 #include <map>
 #include <mutex>
+#include <boost/optional.hpp>
+#include <boost/property_tree/ptree.hpp>
 #include "ApiKeyStore.h"
 
 // Forward declaration to avoid circular includes
@@ -115,11 +117,47 @@ namespace DIGITAL_TWIN_SERVER
 			double max;
 		};
 		std::map<std::string, std::map<std::string, ModelBounds>> _boundsCache;
-		
+
 		ApiKeyStore _apiKeyStore;
 		mutable std::recursive_mutex _authMutex;
 
 		void loadAclConfig();
+
+		/**
+		 * Loads local bounds configuration as fallback for projects
+		 * whose models don't have explicit bounds defined.
+		 * File format: project_bounds.json in the application root.
+		 */
+		void loadLocalBoundsConfig();
+
+		/**
+		 * Extracts bounds from an AttributeUsage element, handling multiple
+		 * JSON schema variations from different SysML v2 backends.
+		 *
+		 * Supports:
+		 * - Standard: {"lowerBound": 0.0, "upperBound": 100.0}
+		 * - Alternate 1: {"min": 0.0, "max": 100.0}
+		 * - Alternate 2: {"low": 0.0, "high": 100.0}
+		 * - Nested: {"constraints": {"min": 0.0, "max": 100.0}}
+		 *
+		 * @return Populated ModelBounds if found, empty optional if not
+		 */
+		boost::optional<ModelBounds> extractBoundsFromElement(
+			const boost::property_tree::ptree& elementJson,
+			const std::string& elementName);
+
+		/**
+		 * Checks if an element is an AttributeUsage, handling different
+		 * type/kind representations across SysML v2 backends.
+		 */
+		static bool isAttributeUsageElement(const boost::property_tree::ptree& elementJson);
+
+		/**
+		 * Extracts the element name from various possible property names
+		 * (declaredName, name, @id fragment, etc.)
+		 */
+		static boost::optional<std::string> extractElementName(
+			const boost::property_tree::ptree& elementJson);
 
 		/**
 		 * Extracts the first path segment from a topic string, which is expected

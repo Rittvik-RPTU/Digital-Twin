@@ -9,3 +9,5 @@ CMakeUserPresets.json
 CMakePresets.json
 .DS_Store
 /tests/verify_security.py
+**/__pycache__/
+*.pyc

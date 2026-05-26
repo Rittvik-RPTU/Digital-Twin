@@ -10,5 +10,17 @@
     "pt-secret-key-01": {
         "device_id": "sensor-01",
         "project": "990e8400-e29b-41d4-a716-999999999999"
+    },
+    "sk-pt-univ-01": {
+        "device_id": "sensor-01",
+        "project": "048a7077-dc4b-4554-ac65-efa62270f878"
+    },
+    "sk-pt-univ-car-01": {
+        "device_id": "sensor-01",
+        "project": "8d8ca656-b014-4168-b9a6-aee066b798c2"
+    },
+    "sk-pt-univ-mycar-01": {
+        "device_id": "sensor-01",
+        "project": "92717667-9ced-4ccb-a7be-54936e0f950f"
     }
 }
