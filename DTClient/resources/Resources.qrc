@@ -242,7 +242,7 @@
         <file>icons/5183073-cloud-computing/png/014-message.png</file>
         <file>icons/5183073-cloud-computing/png/015-repair.png</file>
         <file>icons/5183073-cloud-computing/png/016-smartphone.png</file>
-        <file>icons/5183073-cloud-computing/png/017-reload.png</file>
+        <file alias="Refresh">icons/5183073-cloud-computing/png/017-reload.png</file>
         <file>icons/5183073-cloud-computing/png/018-call.png</file>
         <file>icons/5183073-cloud-computing/png/019-upload.png</file>
         <file>icons/5183073-cloud-computing/png/020-rating.png</file>

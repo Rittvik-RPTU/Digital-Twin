@@ -13,7 +13,8 @@ add_library(PhysicalTwinCommunication
         src/cpp_physical_twin_communication_global.h
         src/MQTT/Topics.h
         src/MQTT/entities/ValueEntity.cpp
-        src/MQTT/entities/ValueEntity.h)
+        src/MQTT/entities/ValueEntity.h
+        src/Services/IMqttClientService.h)
 
 target_link_libraries(PhysicalTwinCommunication
         mqtt_cpp::mqtt_cpp

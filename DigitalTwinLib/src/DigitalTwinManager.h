@@ -13,13 +13,10 @@
 #include <memory>
 
 #include "cpp_digital_twin_lib_global.h"
+#include <Services/IMqttClientService.h>
 
 namespace BACKEND_COMMUNICATION {
     class CommunicationService;
-}
-
-namespace PHYSICAL_TWIN_COMMUNICATION {
-    class MqttClientService;
 }
 
 namespace SysMLv2::REST {
@@ -42,7 +39,7 @@ namespace DigitalTwin {
     class CPPDIGITALTWINLIB_EXPORT DigitalTwinManager {
     public:
         DigitalTwinManager() = delete;
-        explicit DigitalTwinManager(BACKEND_COMMUNICATION::CommunicationService* communicationService, PHYSICAL_TWIN_COMMUNICATION::MqttClientService* clientService,  bool isClient = true);
+        explicit DigitalTwinManager(BACKEND_COMMUNICATION::CommunicationService* communicationService, PHYSICAL_TWIN_COMMUNICATION::IMqttClientService* clientService,  bool isClient = true);
         virtual ~DigitalTwinManager();
 
         void downloadDigitalTwin(boost::uuids::uuid projectId, boost::uuids::uuid digitalTwinId);
@@ -54,7 +51,7 @@ namespace DigitalTwin {
     private:
         void generateMQTTInterface(Model::DigitalTwinModel* digitalTwin);
         BACKEND_COMMUNICATION::CommunicationService* BackendCommunicationService;
-        PHYSICAL_TWIN_COMMUNICATION::MqttClientService* ClientService;
+        PHYSICAL_TWIN_COMMUNICATION::IMqttClientService* ClientService;
 
         std::map<boost::uuids::uuid, Model::DigitalTwinModel*> DigitalTwinModelMap;
 

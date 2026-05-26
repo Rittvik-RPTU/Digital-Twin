@@ -5,30 +5,36 @@
 #ifndef DIGITALTWIN_MQTTCONNECTIONTHREAD_H
 #define DIGITALTWIN_MQTTCONNECTIONTHREAD_H
 
-#include <QThread>
+#include <string>
+#include <functional>
+#include <QMqttClient>
+
+#include <Services/IMqttClientService.h>
 
 namespace PHYSICAL_TWIN_COMMUNICATION {
     class MqttClientService;
 }
 
 namespace DigitalTwin::Client {
-    class MQTTConnectionThread : public QThread {
-    Q_OBJECT
+    class MQTTConnectionThread : public QObject, public PHYSICAL_TWIN_COMMUNICATION::IMqttClientService{
+        Q_OBJECT
     public:
         MQTTConnectionThread() = delete;
-        MQTTConnectionThread(std::string url, std::string port, QObject* parent = nullptr);
-        ~MQTTConnectionThread();
+        MQTTConnectionThread(std::string url, std::string port, std::string username = "", std::string password = "");
+        virtual ~MQTTConnectionThread();
 
-        void run() override;
+        void start();
 
         void addObserverForTopic(const std::string& topic, std::function<void(std::string)> callbackFunction);
-        PHYSICAL_TWIN_COMMUNICATION::MqttClientService* getClientService();
-        void sendValueToSever(const std::string& topic, std::string value);
-    signals:
-        void resultReady();
+        void publish(std::string topic, std::string value) override;
+
+    private slots:
+        void onConnect();
+        void onDisconnect();
+        void onErrorChanged(QMqttClient::ClientError err);
 
     private:
-        PHYSICAL_TWIN_COMMUNICATION::MqttClientService* ClientService;
+       QMqttClient* ClientService;
     };
 }
 

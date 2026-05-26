@@ -42,7 +42,7 @@
      <x>0</x>
      <y>0</y>
      <width>1196</width>
-     <height>24</height>
+     <height>30</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -51,7 +51,6 @@
     </property>
     <addaction name="actionSave_Results"/>
     <addaction name="separator"/>
-    <addaction name="actionOpen_SysMLv2_File"/>
    </widget>
    <widget class="QMenu" name="menuRemotes">
     <property name="title">

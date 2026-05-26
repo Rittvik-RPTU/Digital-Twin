@@ -25,6 +25,7 @@ namespace DIGITAL_TWIN_SERVER {
         INSTANCE_MQTT_PORT,
         INSTANCE_MQTT_CERT_CHAIN,
         INSTANCE_MQTT_CERT_PRIV,
+        INSTANCE_CONFIG_FILE_PATH,
         ARGUMENTS_SIZE
     };
 
@@ -55,7 +56,7 @@ namespace DIGITAL_TWIN_SERVER {
         int getRunTimeCode();
     private:
         /**
-         *
+         * Mapps the elements from the ARGUMENTS Enum to the strings that indexes the the individual argument texts
          */
         const std::string Arguments[ARGUMENTS_SIZE] = {
             "sysml.url",
@@ -64,23 +65,26 @@ namespace DIGITAL_TWIN_SERVER {
             "sysml.password",
             "instance.mqtt.port",
 			"instance.mqtt.cert_chain",
-			"instance.mqtt.cert_private_key"
+            "instance.mqtt.cert_private_key",
+            "instance.config"
         };
 
         /**
-         *
+         * The default values for the Arguments map
          */
         const std::string DefaultValueForArgument[ARGUMENTS_SIZE]{
             "localhost",
             "8088",
             "admin",
             "admin",
-            "",
+            "1883",
 			"",
-			""
+			"",
+            ""
         };
 
         void mapInstanceSettingsByArguments(int argc, char *argv[]);
+        void openConfigFileIfExist();
 
         void createDTTopicAndCallback();
 
