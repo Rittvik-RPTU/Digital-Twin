@@ -78,7 +78,7 @@ namespace DigitalTwin::Client {
     void MainWindowModel::openMarkdownFile(QString filePath) {
         UploadProjectFileToBackend *uploadFileDialog = new UploadProjectFileToBackend(
             BackendCommunication,
-            ConnectionThread ? ConnectionThread->getClientService() : nullptr,
+            ConnectionThread ? ConnectionThread : nullptr,
             Settings->getRESTUserAsString(),
             MainWindow
         );
@@ -107,7 +107,7 @@ namespace DigitalTwin::Client {
             auto project = item->getProject();
             UploadProjectFileToBackend* uploadFileDialog = new UploadProjectFileToBackend(
                 BackendCommunication,
-                ConnectionThread ? ConnectionThread->getClientService() : nullptr,
+                ConnectionThread ? ConnectionThread : nullptr,
                 Settings->getRESTUserAsString(),
                 MainWindow
             );

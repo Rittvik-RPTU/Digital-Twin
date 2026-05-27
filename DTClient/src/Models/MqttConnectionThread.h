@@ -7,7 +7,7 @@
 
 #include <string>
 #include <functional>
-#include <QMqttClient>
+#include <QtMqtt/QMqttClient>
 
 #include <Services/IMqttClientService.h>
 

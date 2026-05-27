@@ -18,7 +18,7 @@
 #include <kerml/root/elements/Element.h>
 #include <kerml/root/annotations/TextualRepresentation.h>
 #include <memory>
-#include <Services/MqttClientService.h>
+#include <Services/IMqttClientService.h>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <sstream>
@@ -29,7 +29,7 @@
 
 namespace DigitalTwin::Client {
     UploadProjectFileToBackend::UploadProjectFileToBackend(BACKEND_COMMUNICATION::CommunicationService* service,
-                                                           PHYSICAL_TWIN_COMMUNICATION::MqttClientService* mqttService,
+                                                           PHYSICAL_TWIN_COMMUNICATION::IMqttClientService* mqttService,
                                                            const std::string& username,
                                                            QWidget *parent) :
             QMainWindow(parent),

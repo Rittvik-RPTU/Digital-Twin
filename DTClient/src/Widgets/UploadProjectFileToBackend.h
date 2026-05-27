@@ -15,7 +15,7 @@
 #include <BECommunicationService.h>
 
 namespace PHYSICAL_TWIN_COMMUNICATION {
-    class MqttClientService;
+    class IMqttClientService;
 }
 
 namespace DigitalTwin::Client {
@@ -35,7 +35,7 @@ namespace DigitalTwin::Client {
 
     public:
         explicit UploadProjectFileToBackend(BACKEND_COMMUNICATION::CommunicationService* service,
-                                            PHYSICAL_TWIN_COMMUNICATION::MqttClientService* mqttService,
+                                            PHYSICAL_TWIN_COMMUNICATION::IMqttClientService* mqttService,
                                             const std::string& username,
                                             QWidget* parent = NULL);
         ~UploadProjectFileToBackend() override;
@@ -65,7 +65,7 @@ namespace DigitalTwin::Client {
 
         UploadProjectFileToBackendStatus Status;
 
-        PHYSICAL_TWIN_COMMUNICATION::MqttClientService* MqttService;
+        PHYSICAL_TWIN_COMMUNICATION::IMqttClientService* MqttService;
         std::string Username;
     };
 }
