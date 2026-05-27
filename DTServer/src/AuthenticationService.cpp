@@ -11,6 +11,8 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <nlohmann/json.hpp>
+#include <curl/curl.h>
 
 namespace DIGITAL_TWIN_SERVER
 {
@@ -585,6 +587,73 @@ namespace DIGITAL_TWIN_SERVER
 			loadAclConfig();
 		} catch (const std::exception& e) {
 			std::cerr << "[AuthService][ACL] Failed to dynamically register project: " << e.what() << "\n";
+		}
+	}
+
+	static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
+		((std::string*)userp)->append((char*)contents, size * nmemb);
+		return size * nmemb;
+	}
+
+	bool AuthenticationService::verifyStatisticalPayload(const std::string& projectId, const std::string& deviceId, const std::string& payload) {
+		// Parse payload into a json object
+		nlohmann::json requestJson;
+		requestJson["projectId"] = projectId;
+		requestJson["deviceId"] = deviceId;
+		try {
+			requestJson["payload"] = nlohmann::json::parse(payload);
+		} catch (const std::exception& e) {
+			std::cerr << "[AuthService][Layer B] Non-JSON payload, bypassing Layer B: " << e.what() << "\n";
+			return true; // Fail-open for non-JSON
+		}
+
+		std::string requestBody = requestJson.dump();
+
+		CURL* curl = curl_easy_init();
+		if (!curl) {
+			std::cerr << "[AuthService][Layer B] Failed to initialize curl\n";
+			return true; // Fail-open if curl fails
+		}
+
+		std::string responseString;
+		struct curl_slist* headers = nullptr;
+		headers = curl_slist_append(headers, "Content-Type: application/json");
+
+		curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:8089/evaluate");
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, requestBody.c_str());
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, requestBody.length());
+		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseString);
+		curl_easy_setopt(curl, CURLOPT_TIMEOUT, 2L); // 2 seconds timeout to avoid hanging the broker
+
+		CURLcode res = curl_easy_perform(curl);
+		curl_slist_free_all(headers);
+		curl_easy_cleanup(curl);
+
+		if (res != CURLE_OK) {
+			std::cerr << "[AuthService][Layer B] curl_easy_perform() failed: " << curl_easy_strerror(res) << "\n";
+			return true; // Fail-open on connection failure
+		}
+
+		try {
+			nlohmann::json responseJson = nlohmann::json::parse(responseString);
+			double trustIndex = responseJson.at("trust_index").get<double>();
+			double zScoreMax = responseJson.value("z_score_max", 0.0);
+			double ifScore = responseJson.value("isolation_forest_score", 0.0);
+
+			std::cout << "[AuthService][Layer B] Evaluation result: Trust Index = " << trustIndex
+					  << " (Z-Score Max = " << zScoreMax << ", IF Score = " << ifScore << ")\n";
+
+			if (trustIndex < 0.35) {
+				std::cerr << "[SECURITY ALERT][Layer B] Statistical anomaly detected: Trust Index " << trustIndex
+						  << " is below threshold 0.35!\n";
+				return false; // Reject
+			}
+			return true; // Accept
+		} catch (const std::exception& e) {
+			std::cerr << "[AuthService][Layer B] Failed to parse response JSON: " << e.what() << " (Response: " << responseString << ")\n";
+			return true; // Fail-open on parse error
 		}
 	}
 } // namespace DIGITAL_TWIN_SERVER

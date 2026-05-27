@@ -212,6 +212,29 @@ namespace DIGITAL_TWIN_SERVER
                                 self->ServerEndpoint->async_send(dp, [self](async_mqtt::error_code const&) { self->stop(); });
                                 return;
                             }
+
+                            // --- Data-Validation Layer B: Statistical Anomaly Detection (FAAD) ---
+                            // Extract deviceId from topic: expected format "projectId/deviceId/telemetry"
+                            std::string deviceId = "";
+                            auto secondSlashPos = topic.find('/', slashPos + 1);
+                            if (secondSlashPos != std::string_view::npos) {
+                                deviceId = std::string(topic.substr(slashPos + 1, secondSlashPos - slashPos - 1));
+                            } else {
+                                deviceId = std::string(topic.substr(slashPos + 1));
+                            }
+
+                            if (!deviceId.empty()) {
+                                if (!self->_authService.verifyStatisticalPayload(projectId, deviceId, payload)) {
+                                    std::cerr << "[Session][Layer B] Statistical anomaly detected by " << self->_principal.id
+                                              << " on topic " << topic << " — disconnecting.\n";
+
+                                    async_mqtt::v5::disconnect_packet dp{
+                                        async_mqtt::disconnect_reason_code::payload_format_invalid
+                                    };
+                                    self->ServerEndpoint->async_send(dp, [self](async_mqtt::error_code const&) { self->stop(); });
+                                    return;
+                                }
+                            }
                         }
                     }
 

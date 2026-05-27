@@ -105,6 +105,17 @@ namespace DIGITAL_TWIN_SERVER
 		bool verifyPayload(const std::string& projectId, const std::string& topic, const std::string& payload);
 
 		/**
+		 * Data-Validation Layer B : Verifies an incoming MQTT telemetry payload against
+		 * statistical models via the FAAD microservice.
+		 *
+		 * @param projectId  The project UUID.
+		 * @param deviceId   The device ID.
+		 * @param payload    The JSON payload string to verify.
+		 * @return true if the payload trust index is >= 0.35, false if a statistical anomaly is detected.
+		 */
+		bool verifyStatisticalPayload(const std::string& projectId, const std::string& deviceId, const std::string& payload);
+
+		/**
 		 * Dynamically registers a project UUID for a given user in users_acl.json on disk
 		 * and reloads the ACL config into memory.
 		 */
