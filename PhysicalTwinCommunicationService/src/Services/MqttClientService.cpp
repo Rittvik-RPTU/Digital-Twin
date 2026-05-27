@@ -48,7 +48,7 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
     }
 
     void MqttClientService::stop() {
-        if (!ClientStarted == false) return;
+        if (!ClientStarted) return;
         boost::asio::post(Strand, [this] {
             boost::asio::co_spawn(Strand, [this]() -> boost::asio::awaitable<void> {
                 try { co_await Client.async_close(boost::asio::use_awaitable); } catch (...) {}
@@ -59,10 +59,17 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
         if (WorkerThread.joinable()) WorkerThread.join();
     }
 
+    void MqttClientService::publish(std::string topic, std::string payload) {
+        publish(topic, payload, async_mqtt::qos::at_most_once);
+    }
+
     void MqttClientService::publish(std::string topic, std::string payload, async_mqtt::qos qos) {
+        if (topic.empty() || payload.empty())
+            return;
+
         std::string securedTopic = secureTopic(topic);
         boost::asio::post(Strand, [this, topic=std::move(securedTopic), payload=std::move(payload), qos] {
-        if (!Connected) return;
+        if (!Connected || !ClientStarted) return;
         boost::asio::co_spawn(Strand, [this, topic, payload, qos]() -> boost::asio::awaitable<void> {
             co_await Client.async_publish(async_mqtt::v5::publish_packet{topic, payload, qos}, boost::asio::use_awaitable);
             co_return;

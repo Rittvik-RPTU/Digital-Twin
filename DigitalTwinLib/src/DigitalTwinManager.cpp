@@ -18,7 +18,7 @@
 
 namespace DigitalTwin {
 
-    DigitalTwinManager::DigitalTwinManager(BACKEND_COMMUNICATION::CommunicationService *communicationService, PHYSICAL_TWIN_COMMUNICATION::MqttClientService* clientService, bool isClient) {
+    DigitalTwinManager::DigitalTwinManager(BACKEND_COMMUNICATION::CommunicationService *communicationService, PHYSICAL_TWIN_COMMUNICATION::IMqttClientService* clientService, bool isClient) {
         BackendCommunicationService = communicationService;
         ClientService = clientService;
         IsClient = isClient;

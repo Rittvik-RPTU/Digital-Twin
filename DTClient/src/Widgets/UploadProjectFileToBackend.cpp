@@ -67,31 +67,22 @@ namespace DigitalTwin::Client {
     {
         Status = UploadProjectFileToBackendStatus::DocumentOpened;
         Parser->parseMarkdownFile(htmlText);
-        Ui->MarkdownViewer->setHtml(Parser->getHTMLOfMarkdown());
-        Ui->ProjektEditor->setPlainText(Parser->getMarkdownString());
         this->setWindowModified(false);
         redecorateWithStatusChange();
     }
 
     void UploadProjectFileToBackend::onTextEdited()
     {
-        Parser->parseMarkdown(Ui->ProjektEditor->toPlainText());
-        Ui->MarkdownViewer->setHtml(Parser->getHTMLOfMarkdown());
         this->setWindowModified(true);
     }
 
     void UploadProjectFileToBackend::makeConnections()
     {
-        connect(Ui->ProjektEditor, SIGNAL(textChanged()), this, SLOT(onTextEdited()));
-        connect(Ui->actionUpload, SIGNAL(triggered(bool)), this, SLOT(onActionUploadClicked()));
-        connect(Ui->actionDownload, SIGNAL(triggered(bool)), this, SLOT(onActionDownloadClicked()));
         connect(Ui->CreateDTButton, SIGNAL(clicked(bool)), this, SLOT(onCreateDigitalTwinClicked()));
     }
 
     void UploadProjectFileToBackend::setMarkdownOfOnlineProject(QString Markdown) {
-        Ui->ProjektEditor->setText(Markdown);
         Parser->parseMarkdown(Markdown);
-        Ui->MarkdownViewer->setHtml(Parser->getHTMLOfMarkdown());
         this->setWindowModified(false);
     }
 
@@ -109,16 +100,6 @@ namespace DigitalTwin::Client {
             if(!textualRep->body().empty() && (textualRep->language()!="Markdown") && (textualRep->language() != "YaML") && (textualRep->getType()=="TextualRepresentation"))
                 DTElementsModels->appendRow( new QStandardItem(QString::fromStdString(textualRep->body())));
         }
-    }
-
-    void UploadProjectFileToBackend::onActionUploadClicked() {
-        if (Status==UploadProjectFileToBackendStatus::DocumentOpened) {
-            createOnlineProject();
-        }
-    }
-
-    void UploadProjectFileToBackend::onActionDownloadClicked() {
-
     }
 
     void UploadProjectFileToBackend::createOnlineProject() {
@@ -144,18 +125,11 @@ namespace DigitalTwin::Client {
                     std::cerr << "[Client] Failed to publish project registration to broker: " << e.what() << "\n";
                 }
             }
-            // Elements = Parser->getElementsOfProject();
-            // Commit = std::make_shared<SysMLv2::REST::Commit>(dialog.getProjectName(), dialog.getProjectDecription(), Project);
 
             std::vector<std::shared_ptr<SysMLv2::REST::DataVersion>> dataVersions;
-//            for (const auto& element : Elements)
-//            {
-//                auto dataVersion = std::make_shared<SysMLv2::Entities::DataVersion>(new SysMLv2::Entities::DataIdentity(boost::uuids::random_generator()()), element);
-//                dataVersions.push_back(dataVersion);
-//            }
+
 
             Commit->setChange(dataVersions);
-            // CommunicationService->postCommitWithId(Project->getId(), Commit);
 
             Status=UploadProjectFileToBackendStatus::OnlineProjectOpened;
             redecorateWithStatusChange();

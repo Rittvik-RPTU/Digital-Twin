@@ -60,7 +60,7 @@ namespace DigitalTwin::Client {
             ConnectionThread = new MQTTConnectionThread(Settings->getMQTTServerAsString(), Settings->getMQTTPortAsString(),
                                                         Settings->getRESTUserAsString(), Settings->getRESTPasswordAsString());
             ConnectionThread->start();
-            DigitalTwinManager = new DigitalTwin::DigitalTwinManager(BackendCommunication, ConnectionThread->getClientService());
+            DigitalTwinManager = new DigitalTwin::DigitalTwinManager(BackendCommunication, ConnectionThread);
             BackendCommunication->setUserForLoginInBackend(Settings->getRESTUserAsString(),Settings->getRESTPasswordAsString());
             Status = MainWindowStatus::CONNECTED;
 
