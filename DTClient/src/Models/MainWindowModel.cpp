@@ -76,7 +76,12 @@ namespace DigitalTwin::Client {
     }
 
     void MainWindowModel::openMarkdownFile(QString filePath) {
-        UploadProjectFileToBackend *uploadFileDialog = new UploadProjectFileToBackend(BackendCommunication, MainWindow);
+        UploadProjectFileToBackend *uploadFileDialog = new UploadProjectFileToBackend(
+            BackendCommunication,
+            ConnectionThread ? ConnectionThread->getClientService() : nullptr,
+            Settings->getRESTUserAsString(),
+            MainWindow
+        );
         uploadFileDialog->setHTMLTextForView(filePath);
         uploadFileDialog->show();
     }
@@ -100,7 +105,12 @@ namespace DigitalTwin::Client {
             MainWindow->addTabWidget(new DigitalTwinTabWidget(model,MainWindow),QString::fromStdString(possibleDigitalTwin->getName()));
         } else if(item->getProject() != nullptr) {
             auto project = item->getProject();
-            UploadProjectFileToBackend* uploadFileDialog = new UploadProjectFileToBackend(BackendCommunication, MainWindow);
+            UploadProjectFileToBackend* uploadFileDialog = new UploadProjectFileToBackend(
+                BackendCommunication,
+                ConnectionThread ? ConnectionThread->getClientService() : nullptr,
+                Settings->getRESTUserAsString(),
+                MainWindow
+            );
             auto branches = BackendCommunication->getAllBranchesForProjectWithID(project->getId());
             std::vector<std::shared_ptr<KerML::Entities::Element>> elements;
             std::shared_ptr<SysMLv2::REST::Commit> commit = nullptr;

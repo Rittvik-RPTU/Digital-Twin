@@ -37,6 +37,8 @@ namespace DIGITAL_TWIN_SERVER {
 
         void setUpTLS();
         void run();
+        
+        AuthenticationService& getAuthService() { return authService; }
 
     private:
         void accept_one();

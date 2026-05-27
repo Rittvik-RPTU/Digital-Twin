@@ -275,17 +275,28 @@ namespace DIGITAL_TWIN_SERVER
 		std::string projectId = extractProjectId(filter);
 		if (projectId.empty()) return true; // No project prefix → system-level
 
+		std::lock_guard<std::recursive_mutex> lock(_authMutex);
+
+		// Get current authorized projects (dynamically reloaded)
+		std::vector<std::string> const* authorizedProjectIds = &p.authorizedProjectIds;
+		if (!p.isPhysicalTwin) {
+			auto it = _userAcls.find(p.id);
+			if (it != _userAcls.end()) {
+				authorizedProjectIds = &it->second;
+			}
+		}
+
 		// Wildcard check for super-admin access
-		if (std::find(p.authorizedProjectIds.begin(), p.authorizedProjectIds.end(), "*") != p.authorizedProjectIds.end()) {
+		if (std::find(authorizedProjectIds->begin(), authorizedProjectIds->end(), "*") != authorizedProjectIds->end()) {
 			return true;
 		}
 
-		// Check if the project is in the principal's authorized set
+		// Check if the project is in the authorized set
 		return std::find(
-			p.authorizedProjectIds.begin(),
-			p.authorizedProjectIds.end(),
+			authorizedProjectIds->begin(),
+			authorizedProjectIds->end(),
 			projectId
-		) != p.authorizedProjectIds.end();
+		) != authorizedProjectIds->end();
 	}
 
 	bool AuthenticationService::canPublish(Principal const& p, std::string_view topic) const
@@ -301,8 +312,19 @@ namespace DIGITAL_TWIN_SERVER
 		std::string projectId = extractProjectId(topic);
 		if (projectId.empty()) return true; // No project prefix → system-level
 
+		std::lock_guard<std::recursive_mutex> lock(_authMutex);
+
+		// Get current authorized projects (dynamically reloaded)
+		std::vector<std::string> const* authorizedProjectIds = &p.authorizedProjectIds;
+		if (!p.isPhysicalTwin) {
+			auto it = _userAcls.find(p.id);
+			if (it != _userAcls.end()) {
+				authorizedProjectIds = &it->second;
+			}
+		}
+
 		// Wildcard check for super-admin access
-		if (std::find(p.authorizedProjectIds.begin(), p.authorizedProjectIds.end(), "*") != p.authorizedProjectIds.end()) {
+		if (std::find(authorizedProjectIds->begin(), authorizedProjectIds->end(), "*") != authorizedProjectIds->end()) {
 			return true;
 		}
 
@@ -318,10 +340,10 @@ namespace DIGITAL_TWIN_SERVER
 
 		// Check project authorization
 		return std::find(
-			p.authorizedProjectIds.begin(),
-			p.authorizedProjectIds.end(),
+			authorizedProjectIds->begin(),
+			authorizedProjectIds->end(),
 			projectId
-		) != p.authorizedProjectIds.end();
+		) != authorizedProjectIds->end();
 	}
 
 	std::string AuthenticationService::extractProjectId(std::string_view topic)
@@ -514,6 +536,55 @@ namespace DIGITAL_TWIN_SERVER
 			std::cout << "[AuthService][Bounds] Non-JSON payload on topic '" << topic
 			          << "' — skipping bounds validation: " << ex.what() << "\n";
 			return true;  // Allow non-JSON payloads through
+		}
+	}
+
+	void AuthenticationService::registerProjectForUser(const std::string& username, const std::string& projectId) {
+		std::lock_guard<std::recursive_mutex> lock(_authMutex);
+		try {
+			boost::property_tree::ptree pt;
+			boost::property_tree::read_json("users_acl.json", pt);
+
+			// Find or create the user node, then append the project ID if not already present
+			auto& usersNode = pt.get_child("users");
+			auto userOpt = usersNode.get_child_optional(username);
+			
+			if (userOpt) {
+				auto& projectsNode = usersNode.get_child(username).get_child("projects");
+				// Check if already present
+				bool exists = false;
+				for (auto& p : projectsNode) {
+					if (p.second.data() == projectId) {
+						exists = true;
+						break;
+					}
+				}
+				if (!exists) {
+					boost::property_tree::ptree newProj;
+					newProj.put("", projectId);
+					projectsNode.push_back(std::make_pair("", newProj));
+				}
+			} else {
+				// User not found in ACL, create them
+				boost::property_tree::ptree projectsNode;
+				boost::property_tree::ptree newProj;
+				newProj.put("", projectId);
+				projectsNode.push_back(std::make_pair("", newProj));
+				
+				boost::property_tree::ptree userNode;
+				userNode.add_child("projects", projectsNode);
+				usersNode.add_child(username, userNode);
+			}
+
+			// Write back to disk
+			boost::property_tree::write_json("users_acl.json", pt);
+			std::cout << "[AuthService][ACL] Dynamically registered project '" << projectId 
+			          << "' for user '" << username << "' and updated users_acl.json.\n";
+
+			// Reload configuration in memory
+			loadAclConfig();
+		} catch (const std::exception& e) {
+			std::cerr << "[AuthService][ACL] Failed to dynamically register project: " << e.what() << "\n";
 		}
 	}
 } // namespace DIGITAL_TWIN_SERVER

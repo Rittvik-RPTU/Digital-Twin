@@ -11,6 +11,9 @@
 #include <iostream>
 #include <utility>
 #include <string>
+#include <sstream>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 namespace DIGITAL_TWIN_SERVER {
     DigitalTwinServerInstanceManager::DigitalTwinServerInstanceManager(int argc, char *argv[])

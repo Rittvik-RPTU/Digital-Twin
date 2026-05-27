@@ -18,17 +18,27 @@
 #include <kerml/root/elements/Element.h>
 #include <kerml/root/annotations/TextualRepresentation.h>
 #include <memory>
+#include <Services/MqttClientService.h>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <sstream>
+#include <boost/uuid/uuid_io.hpp>
 
 #include "entities/TwinRequest.h"
 //#include "AGILABackendImplementation/DigitalTwin.h"
 
 namespace DigitalTwin::Client {
-    UploadProjectFileToBackend::UploadProjectFileToBackend(BACKEND_COMMUNICATION::CommunicationService* service, QWidget *parent) :
+    UploadProjectFileToBackend::UploadProjectFileToBackend(BACKEND_COMMUNICATION::CommunicationService* service,
+                                                           PHYSICAL_TWIN_COMMUNICATION::MqttClientService* mqttService,
+                                                           const std::string& username,
+                                                           QWidget *parent) :
             QMainWindow(parent),
             Ui(new Ui::UploadProjectFileToBackend()),
 			Parser(new MarkdownParser()),
             DTElementsModels(new QStandardItemModel()),
-            CommunicationService(service)
+            CommunicationService(service),
+            MqttService(mqttService),
+            Username(username)
     {
         Ui->setupUi(this);
         Ui->retranslateUi(this);
@@ -116,6 +126,24 @@ namespace DigitalTwin::Client {
         dialog.exec();
         if(dialog.result()==QDialog::DialogCode::Accepted) {
             Project = CommunicationService->postProject(dialog.getProjectName(), dialog.getProjectDecription(), "Main");
+
+            // Dynamic project ACL registration on Broker
+            if (MqttService && Project) {
+                try {
+                    boost::property_tree::ptree pt;
+                    pt.put("username", Username);
+                    pt.put("projectId", boost::uuids::to_string(Project->getId()));
+                    
+                    std::ostringstream ss;
+                    boost::property_tree::write_json(ss, pt);
+                    
+                    MqttService->publish("dt/system/register_project", ss.str());
+                    std::cout << "[Client] Published dynamic project registration to broker for project " 
+                              << boost::uuids::to_string(Project->getId()) << "\n";
+                } catch (const std::exception& e) {
+                    std::cerr << "[Client] Failed to publish project registration to broker: " << e.what() << "\n";
+                }
+            }
             // Elements = Parser->getElementsOfProject();
             // Commit = std::make_shared<SysMLv2::REST::Commit>(dialog.getProjectName(), dialog.getProjectDecription(), Project);
 

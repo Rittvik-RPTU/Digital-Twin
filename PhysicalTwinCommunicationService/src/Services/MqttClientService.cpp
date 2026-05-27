@@ -131,7 +131,7 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
         std::string securedTopic = secureTopic(topic);
         boost::asio::post(Strand, [this, topic = std::move(securedTopic), callback = std::move(callback)]() mutable {
 
-            Callbacks[topic] = std::move(callback);
+            Subscriptions[topic] = std::move(callback);
 
             if (!Connected) return;
 
@@ -185,6 +185,23 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
         );
         (void)connack_opt;
         Connected = true;
+
+        // Auto-subscribe to all existing subscriptions upon connection
+        for (const auto& [topic, _] : Subscriptions) {
+            auto pid = co_await Client.async_acquire_unique_packet_id_wait_until(boost::asio::use_awaitable);
+            if (pid) {
+                std::vector<async_mqtt::topic_subopts> entries{
+                    {topic, async_mqtt::qos::at_most_once}
+                };
+                co_await Client.async_subscribe(
+                    async_mqtt::v5::subscribe_packet{
+                        pid,
+                        async_mqtt::force_move(entries)
+                    },
+                    boost::asio::use_awaitable
+                );
+            }
+        }
 
         // 3) Receive dispatcher (holt PUBLISH/DISCONNECT/AUTH aus interner Queue) :contentReference[oaicite:7]{index=7}
         while (ClientStarted) {

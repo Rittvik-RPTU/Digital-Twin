@@ -2,6 +2,9 @@
 
 #include <iostream>
 #include <async_mqtt/all.hpp>
+#include <sstream>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 namespace DIGITAL_TWIN_SERVER
 {
@@ -152,6 +155,35 @@ namespace DIGITAL_TWIN_SERVER
 
                     std::string topic = std::string(pp.topic());
                     std::string payload {pp.payload().data(),pp.payload().size()};
+
+                    // Intercept and handle dynamic project registration system message locally
+                    if (topic == "dt/system/register_project") {
+                        try {
+                            std::istringstream ss(payload);
+                            boost::property_tree::ptree pt;
+                            boost::property_tree::read_json(ss, pt);
+                            
+                            std::string username = pt.get<std::string>("username");
+                            std::string projectId = pt.get<std::string>("projectId");
+                            
+                            // Enforce Security: A user can only register a project for themselves!
+                            if (username != self->_principal.id) {
+                                std::cerr << "[Session] Security Alert: User '" << self->_principal.id
+                                          << "' tried to register project for another user: '" << username << "'. Disconnecting.\n";
+                                async_mqtt::v5::disconnect_packet dp{
+                                    async_mqtt::disconnect_reason_code::not_authorized
+                                };
+                                self->ServerEndpoint->async_send(dp, [self](async_mqtt::error_code const&) { self->stop(); });
+                                return;
+                            }
+                            
+                            self->_authService.registerProjectForUser(self->_principal.id, projectId);
+                        } catch (const std::exception& e) {
+                            std::cerr << "[Session] Error processing dynamic project registration: " << e.what() << "\n";
+                        }
+                        // Stop processing (do not forward/publish this topic to other clients)
+                        return;
+                    }
 
                     // --- Phase 2: Per-topic access control on PUBLISH ---
                     if (!self->_authService.canPublish(self->_principal, topic)) {

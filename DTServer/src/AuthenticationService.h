@@ -104,6 +104,11 @@ namespace DIGITAL_TWIN_SERVER
 		 */
 		bool verifyPayload(const std::string& projectId, const std::string& topic, const std::string& payload);
 
+		/**
+		 * Dynamically registers a project UUID for a given user in users_acl.json on disk
+		 * and reloads the ACL config into memory.
+		 */
+		void registerProjectForUser(const std::string& username, const std::string& projectId);
 	private:
 		BACKEND_COMMUNICATION::CommunicationService* _backendService = nullptr;
 		std::map<std::string, std::vector<std::string>> _userAcls;
