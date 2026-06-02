@@ -1,0 +1,41 @@
+--- Demo 2: PT API Key Authentication ---
+Client null sending CONNECT
+Client (null) received CONNACK (0)
+Client null sending PUBLISH (d0, q0, r0, m1, '048a7077-dc4b-4554-ac65-efa62270f878/sensor-01/status', ... (6 bytes))
+Client null sending DISCONNECT
+
+--- Demo 3A: Valid Telemetry ---
+Client null sending CONNECT
+Client (null) received CONNACK (0)
+Client null sending PUBLISH (d0, q0, r0, m1, '048a7077-dc4b-4554-ac65-efa62270f878/sensor-01/telemetry', ... (21 bytes))
+Client null sending DISCONNECT
+
+--- Demo 3B: Hard-Bounds Violation ---
+Client null sending CONNECT
+Client (null) received CONNACK (0)
+Client null sending PUBLISH (d0, q0, r0, m1, '048a7077-dc4b-4554-ac65-efa62270f878/sensor-01/telemetry', ... (22 bytes))
+Client null sending DISCONNECT
+
+--- Demo 4A: Authorized Project Access ---
+zsh:11: command not found: timeout
+
+--- Demo 4B: Unauthorized Project Access ---
+zsh:14: command not found: timeout
+
+--- Demo 4C: Lateral Movement ---
+Client null sending CONNECT
+Client (null) received CONNACK (0)
+Client null sending PUBLISH (d0, q0, r0, m1, '048a7077-dc4b-4554-ac65-efa62270f878/sensor-02/status', ... (9 bytes))
+Client null sending DISCONNECT
+
+--- Demo 6: Anti-Spoofing ---
+Client null sending CONNECT
+Client (null) received CONNACK (0)
+Client null sending PUBLISH (d0, q0, r0, m1, 'dt/system/integrity', ... (20 bytes))
+Client null sending DISCONNECT
+
+--- Demo 4A: Authorized Project Access ---
+
+--- Demo 4B: Unauthorized Project Access ---
+Client null sending CONNECT
+Client null sending CONNECT
