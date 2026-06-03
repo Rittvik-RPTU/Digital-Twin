@@ -66,11 +66,11 @@ def evaluate_fuzzy_logic(z_max, if_score):
     # Output Centroids: Low = 0.1, Medium = 0.5, High = 0.9
     rules = [
         (min(z_anomalous, if_anomalous), 0.1), # Rule 1: Both anomalous -> Low trust
-        (min(z_suspect, if_anomalous), 0.1),   # Rule 2: Suspect + IF anomaly -> Low trust
-        (min(z_normal, if_anomalous), 0.5),    # Rule 3: Normal Z + IF anomaly -> Medium trust
-        (min(z_suspect, if_normal), 0.5),      # Rule 4: Suspect Z + IF normal -> Medium trust
-        (min(z_normal, if_normal), 0.9),       # Rule 5: Both normal -> High trust
-        (min(z_anomalous, if_normal), 0.3),    # Rule 6: Anomalous Z + IF normal -> Low-Medium trust
+        (min(z_suspect, if_anomalous), 0.1),   # Rule 2: Suspect Z + IF anomaly -> Low trust
+        (min(z_anomalous, if_normal), 0.3),    # Rule 3: Anomalous Z + IF normal -> Low-Medium trust
+        (min(z_normal, if_anomalous), 0.5),    # Rule 4: Normal Z + IF anomaly -> Medium trust
+        (min(z_suspect, if_normal), 0.5),      # Rule 5: Suspect Z + IF normal -> Medium trust
+        (min(z_normal, if_normal), 0.9),       # Rule 6: Both normal -> High trust
     ]
     
     numerator = sum(w * c for w, c in rules)
