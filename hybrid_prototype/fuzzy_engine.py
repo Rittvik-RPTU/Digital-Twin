@@ -69,18 +69,25 @@ if __name__ == "__main__":
     try:
         from data_generator import generate_telemetry_data
         df = generate_telemetry_data(randomize=False)
-        df.to_csv("telemetry_dataset.csv", index=False)
+        import os
+        dir_path = os.path.dirname(os.path.abspath(__file__))
+        df.to_csv(os.path.join(dir_path, "telemetry_dataset.csv"), index=False)
     except Exception as e:
         print(f"Warning: Could not generate data dynamically ({e}). Loading fallback CSV.")
-        df = pd.read_csv("telemetry_dataset.csv")
+        import os
+        dir_path = os.path.dirname(os.path.abspath(__file__))
+        df = pd.read_csv(os.path.join(dir_path, "telemetry_dataset.csv"))
     
     # 2. Initialize Pipeline
-    z_monitor = ZScoreMonitor(window_size=30)
+    z_temp_monitor = ZScoreMonitor(window_size=30)
+    z_spd_monitor = ZScoreMonitor(window_size=30)
+    z_trq_monitor = ZScoreMonitor(window_size=30)
     if_monitor = IsolationForestMonitor(contamination=0.02)
     fuzzy_engine = FuzzyTrustEngine()
     
     # Pre-train IF Monitor
-    baseline_data = df.iloc[0:150][['speed', 'temperature']].values.tolist()
+    train_df = df[df['split'] == 'Train']
+    baseline_data = train_df[['airTemperature', 'rotationalSpeed', 'torque']].values.tolist()
     if_monitor.train(baseline_data)
     
     # 3. Process Stream
@@ -89,11 +96,15 @@ if __name__ == "__main__":
     trust_indices = []
     
     for _, row in df.iterrows():
-        z = z_monitor.process(row['temperature'])
-        i_f = if_monitor.score(row['speed'], row['temperature'])
-        trust = fuzzy_engine.evaluate(z, i_f)
+        z_temp = z_temp_monitor.process(row['airTemperature'])
+        z_spd = z_spd_monitor.process(row['rotationalSpeed'])
+        z_trq = z_trq_monitor.process(row['torque'])
+        z_max = max(z_temp, z_spd, z_trq)
         
-        z_scores.append(z)
+        i_f = if_monitor.score(row['airTemperature'], row['rotationalSpeed'], row['torque'])
+        trust = fuzzy_engine.evaluate(z_max, i_f)
+        
+        z_scores.append(z_max)
         if_scores.append(i_f)
         trust_indices.append(trust)
         
@@ -102,43 +113,36 @@ if __name__ == "__main__":
     df['trust_index'] = trust_indices
     
     # 4. Plot Full Pipeline Results
-    fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(14, 12), sharex=True)
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 9), sharex=True)
     
-    # Raw Data
-    ax1.plot(df['time'], df['speed'], label='Speed (km/h)', color='blue', alpha=0.4)
-    ax1.plot(df['time'], df['temperature'], label='Temperature (°C)', color='red', alpha=0.8)
-    ax1.set_title("1. Raw Telemetry Stream")
+    # Z-Score
+    ax1.plot(df['time'], df['z_score'], label='Z-Score', color='black')
+    ax1.axhline(y=3.0, color='orange', linestyle='--', label='High Z Threshold')
+    ax1.set_title("1. Statistical Anomaly Monitor (Z-Score)")
     ax1.legend(loc='upper right')
     ax1.grid(True, alpha=0.3)
     
-    # Z-Score
-    ax2.plot(df['time'], df['z_score'], label='Z-Score', color='black')
-    ax2.axhline(y=3.0, color='orange', linestyle='--', label='High Z Threshold')
-    ax2.set_title("2. Statistical Anomaly Monitor (Z-Score)")
+    # IF-Score
+    ax2.plot(df['time'], df['if_score'], label='IF-Score', color='green')
+    ax2.axhline(y=0.6, color='orange', linestyle='--', label='Anomalous IF Threshold')
+    ax2.set_title("2. Structural Anomaly Monitor (Isolation Forest)")
     ax2.legend(loc='upper right')
     ax2.grid(True, alpha=0.3)
     
-    # IF-Score
-    ax3.plot(df['time'], df['if_score'], label='IF-Score', color='green')
-    ax3.axhline(y=0.6, color='orange', linestyle='--', label='Anomalous IF Threshold')
-    ax3.set_title("3. Structural Anomaly Monitor (Isolation Forest)")
+    # Fuzzy Trust Index
+    ax3.plot(df['time'], df['trust_index'], label='Trust Index', color='purple', linewidth=2)
+    ax3.axhline(y=0.3, color='red', linestyle='--', label='CRITICAL Block Threshold')
+    ax3.axhline(y=0.7, color='orange', linestyle='--', label='WARNING Threshold')
+    ax3.fill_between(df['time'], 0, 0.3, color='red', alpha=0.1)
+    ax3.fill_between(df['time'], 0.3, 0.7, color='orange', alpha=0.1)
+    ax3.fill_between(df['time'], 0.7, 1.0, color='green', alpha=0.1)
+    ax3.set_title("3. Fuzzy Trust Engine Output (Decision Fusion)")
+    ax3.set_xlabel("Time Steps")
+    ax3.set_ylabel("Trust Level (0 to 1)")
     ax3.legend(loc='upper right')
     ax3.grid(True, alpha=0.3)
     
-    # Fuzzy Trust Index
-    ax4.plot(df['time'], df['trust_index'], label='Trust Index', color='purple', linewidth=2)
-    ax4.axhline(y=0.3, color='red', linestyle='--', label='CRITICAL Block Threshold')
-    ax4.axhline(y=0.7, color='orange', linestyle='--', label='WARNING Threshold')
-    ax4.fill_between(df['time'], 0, 0.3, color='red', alpha=0.1)
-    ax4.fill_between(df['time'], 0.3, 0.7, color='orange', alpha=0.1)
-    ax4.fill_between(df['time'], 0.7, 1.0, color='green', alpha=0.1)
-    ax4.set_title("4. Fuzzy Trust Engine Output (Decision Fusion)")
-    ax4.set_xlabel("Time Steps")
-    ax4.set_ylabel("Trust Level (0 to 1)")
-    ax4.legend(loc='upper right')
-    ax4.grid(True, alpha=0.3)
-    
     plt.tight_layout()
-    save_path = "faad_pipeline_test.png"
+    save_path = os.path.join(dir_path, "faad_pipeline_test.png")
     plt.savefig(save_path, dpi=300)
     print(f"FAAD Pipeline test complete. Master Plot saved to {save_path}")

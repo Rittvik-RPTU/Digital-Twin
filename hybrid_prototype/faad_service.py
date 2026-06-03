@@ -98,14 +98,14 @@ class FAADRequestHandler(BaseHTTPRequestHandler):
                 payload = data.get("payload", {})
                 
                 # Extract telemetry fields and fill missing with historical averages
-                temp = float(payload.get("temperature", means["temperature"]))
-                spd = float(payload.get("speed", means["speed"]))
-                chg = float(payload.get("chargeLevel", means["chargeLevel"]))
+                temp = float(payload.get("airTemperature", means["airTemperature"]))
+                spd = float(payload.get("rotationalSpeed", means["rotationalSpeed"]))
+                chg = float(payload.get("torque", means["torque"]))
                 
                 # 1. Z-Score Calculation
-                z_temp = abs(temp - means["temperature"]) / stds["temperature"]
-                z_spd = abs(spd - means["speed"]) / stds["speed"]
-                z_chg = abs(chg - means["chargeLevel"]) / stds["chargeLevel"]
+                z_temp = abs(temp - means["airTemperature"]) / stds["airTemperature"]
+                z_spd = abs(spd - means["rotationalSpeed"]) / stds["rotationalSpeed"]
+                z_chg = abs(chg - means["torque"]) / stds["torque"]
                 z_max = max(z_temp, z_spd, z_chg)
                 
                 # 2. Isolation Forest Evaluation
@@ -121,7 +121,7 @@ class FAADRequestHandler(BaseHTTPRequestHandler):
                     "isolation_forest_score": if_score
                 }
                 
-                print(f"[FAAD Service] Evaluated payload: Temp={temp:.1f}, Spd={spd:.1f}, Chg={chg:.1f} "
+                print(f"[FAAD Service] Evaluated payload: AirTemp={temp:.1f}, RotSpeed={spd:.1f}, Torque={chg:.1f} "
                       f"-> Z_max={z_max:.2f}, IF_score={if_score:.3f} -> Trust={trust_index:.3f}")
                       
                 self._send_json(200, response_data)

@@ -6,24 +6,23 @@ from sklearn.ensemble import IsolationForest
 class IsolationForestMonitor:
     """
     Data-Validation Layer B (Component 2): Structural Anomaly Detector
-    Uses multivariate Isolation Forest to detect anomalies in [speed, temperature] correlation.
+    Uses multivariate Isolation Forest to detect anomalies in [airTemperature, rotationalSpeed, torque] correlation.
     """
     def __init__(self, contamination=0.05):
         self.clf = IsolationForest(contamination=contamination, random_state=42)
         self.is_trained = False
-        self.training_data = []
 
     def train(self, data_points):
         """
         Trains the model on a baseline of normal data.
-        data_points: List of [speed, temperature] vectors.
+        data_points: List of [airTemperature, rotationalSpeed, torque] vectors.
         """
         X = np.array(data_points)
         self.clf.fit(X)
         self.is_trained = True
         print(f"[IF Monitor] Model trained on {len(data_points)} samples.")
 
-    def score(self, speed, temperature):
+    def score(self, air_temp, rot_speed, torque):
         """
         Returns an anomaly score between 0 and 1.
         1.0 = Highly Anomalous, 0.0 = Normal.
@@ -31,7 +30,7 @@ class IsolationForestMonitor:
         if not self.is_trained:
             return 0.0
         
-        X_live = np.array([[speed, temperature]])
+        X_live = np.array([[air_temp, rot_speed, torque]])
         
         # scikit-learn's score_samples returns the opposite of the anomaly score 
         # defined in the original Liu et al. (2008) paper.
@@ -45,46 +44,44 @@ if __name__ == "__main__":
     print("Testing Isolation Forest Monitor on synthetic dataset...")
     
     # Load dataset
-    df = pd.read_csv("telemetry_dataset.csv")
+    import os
+    dir_path = os.path.dirname(os.path.abspath(__file__))
+    df = pd.read_csv(os.path.join(dir_path, "telemetry_dataset.csv"))
     
     # Initialize monitor
     if_monitor = IsolationForestMonitor(contamination=0.02)
     
-    # Phase 1: Training on the first 150 samples (Normal baseline)
-    baseline_data = df.iloc[0:150][['speed', 'temperature']].values.tolist()
+    # Phase 1: Training on the first 5000 samples (Normal baseline)
+    train_df = df[df['split'] == 'Train']
+    baseline_data = train_df[['airTemperature', 'rotationalSpeed', 'torque']].values.tolist()
     if_monitor.train(baseline_data)
     
     # Phase 2: Scoring the full stream
     if_scores = []
     for _, row in df.iterrows():
-        s = if_monitor.score(row['speed'], row['temperature'])
+        s = if_monitor.score(row['airTemperature'], row['rotationalSpeed'], row['torque'])
         if_scores.append(s)
         
     df['if_score'] = if_scores
     
     # Plot results
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
+    fig, ax = plt.subplots(figsize=(14, 5))
     
-    # Top plot: Speed & Temperature
-    ax1.plot(df['time'], df['speed'], label='Speed (km/h)', color='blue', alpha=0.4)
-    ax1.plot(df['time'], df['temperature'], label='Temperature (°C)', color='red', alpha=0.8)
-    ctx_anom = df[df['label'] == 'Contextual Anomaly']
-    ax1.scatter(ctx_anom['time'], ctx_anom['temperature'], color='purple', marker='o', s=30, label='Contextual Anomaly (IF Target)')
-    ax1.set_title("Multi-variate Telemetry Stream")
-    ax1.set_ylabel("Value")
-    ax1.legend()
-    ax1.grid(True, alpha=0.3)
+    # IF Score Plot
+    ax.plot(df['time'], df['if_score'], label='IF Anomaly Score', color='green')
+    ax.axhline(y=0.6, color='black', linestyle='--', label='Detection Threshold')
     
-    # Bottom plot: IF Score
-    ax2.plot(df['time'], df['if_score'], label='IF Anomaly Score', color='green')
-    ax2.axhline(y=0.6, color='black', linestyle='--', label='Detection Threshold')
-    ax2.set_title("Isolation Forest Monitor Output")
-    ax2.set_xlabel("Time Steps")
-    ax2.set_ylabel("Anomaly Score (0=Normal, 1=Anomalous)")
-    ax2.legend()
-    ax2.grid(True, alpha=0.3)
+    # Highlight actual machine failure time steps
+    failures = df[df['label'] == 'Anomalous']
+    ax.scatter(failures['time'], [0.6] * len(failures), color='purple', marker='o', s=30, zorder=5, label='Actual Machine Failure')
+    
+    ax.set_title("Isolation Forest Monitor Output")
+    ax.set_xlabel("Time Steps")
+    ax.set_ylabel("Anomaly Score (0=Normal, 1=Anomalous)")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
     
     plt.tight_layout()
-    save_path = "if_test.png"
+    save_path = os.path.join(dir_path, "if_test.png")
     plt.savefig(save_path, dpi=300)
     print(f"Test complete. Plot saved to {save_path}")

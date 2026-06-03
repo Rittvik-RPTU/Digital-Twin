@@ -39,41 +39,43 @@ if __name__ == "__main__":
     print("Testing Z-Score Monitor on synthetic dataset...")
     
     # Load dataset
-    df = pd.read_csv("telemetry_dataset.csv")
+    import os
+    dir_path = os.path.dirname(os.path.abspath(__file__))
+    df = pd.read_csv(os.path.join(dir_path, "telemetry_dataset.csv"))
     
-    # Initialize monitor
-    z_monitor = ZScoreMonitor(window_size=30)
+    # Initialize monitors for all three attributes
+    z_temp_monitor = ZScoreMonitor(window_size=30)
+    z_spd_monitor = ZScoreMonitor(window_size=30)
+    z_trq_monitor = ZScoreMonitor(window_size=30)
     
     # Process stream
-    z_scores = []
-    for temp in df['temperature']:
-        z = z_monitor.process(temp)
-        z_scores.append(z)
+    z_max_scores = []
+    for _, row in df.iterrows():
+        z_t = z_temp_monitor.process(row['airTemperature'])
+        z_s = z_spd_monitor.process(row['rotationalSpeed'])
+        z_q = z_trq_monitor.process(row['torque'])
+        z_max_scores.append(max(z_t, z_s, z_q))
         
-    df['z_score_temp'] = z_scores
+    df['z_max_score'] = z_max_scores
     
     # Plot results
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
+    fig, ax = plt.subplots(figsize=(14, 5))
     
-    # Top plot: Raw Data
-    ax1.plot(df['time'], df['temperature'], label='Temperature (°C)', color='red', alpha=0.8)
-    stat_anom = df[df['label'] == 'Statistical Anomaly']
-    ax1.scatter(stat_anom['time'], stat_anom['temperature'], color='black', marker='x', s=100, label='Statistical Spike')
-    ax1.set_title("Raw Temperature Stream")
-    ax1.set_ylabel("Temperature")
-    ax1.legend()
-    ax1.grid(True, alpha=0.3)
+    # Z-Score Plot
+    ax.plot(df['time'], df['z_max_score'], label='Z_max Score', color='blue')
+    ax.axhline(y=3.0, color='orange', linestyle='--', label='Typical Hard Threshold (Z=3)')
     
-    # Bottom plot: Z-Score
-    ax2.plot(df['time'], df['z_score_temp'], label='Z-Score (Magnitude)', color='blue')
-    ax2.axhline(y=3.0, color='orange', linestyle='--', label='Typical Hard Threshold (Z=3)')
-    ax2.set_title("Z-Score Monitor Output")
-    ax2.set_xlabel("Time Steps")
-    ax2.set_ylabel("Z-Score")
-    ax2.legend()
-    ax2.grid(True, alpha=0.3)
+    # Highlight actual machine failure time steps
+    failures = df[df['label'] == 'Anomalous']
+    ax.scatter(failures['time'], [3.0] * len(failures), color='red', marker='x', s=100, zorder=5, label='Actual Machine Failure')
+    
+    ax.set_title("Maximum Z-Score Monitor Output ($Z_{max}$)")
+    ax.set_xlabel("Time Steps")
+    ax.set_ylabel("Z-Score")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
     
     plt.tight_layout()
-    save_path = "z_score_test.png"
+    save_path = os.path.join(dir_path, "z_score_test.png")
     plt.savefig(save_path, dpi=300)
     print(f"Test complete. Plot saved to {save_path}")

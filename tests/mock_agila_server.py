@@ -18,6 +18,18 @@ BOUNDS_MODELS = {
     "550e8400-e29b-41d4-a716-446655440000": {
         "stealthLevel": {"min": 0.0, "max": 10.0, "unit": "level"},
         "altitude": {"min": 0.0, "max": 50000.0, "unit": "meters"}
+    },
+    # University Project - Milling Machine Attributes
+    "92717667-9ced-4ccb-a7be-54936e0f950f": {
+        "airTemperature": {"min": 0.0, "max": 120.0, "unit": "°C"},
+        "rotationalSpeed": {"min": 0.0, "max": 3000.0, "unit": "rpm"},
+        "torque": {"min": 0.0, "max": 100.0, "unit": "Nm"}
+    },
+    # University Project - Electric Car Attributes
+    "048a7077-dc4b-4554-ac65-efa62270f878": {
+        "temperature": {"min": 0.0, "max": 120.0, "unit": "°C"},
+        "speed": {"min": 0.0, "max": 250.0, "unit": "km/h"},
+        "chargeLevel": {"min": 0.0, "max": 100.0, "unit": "%"}
     }
 }
 
