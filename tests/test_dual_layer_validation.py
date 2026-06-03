@@ -54,7 +54,7 @@ def main():
         if is_port_in_use(8089):
             print("[Orchestrator] Port 8089 is already in use. Reusing existing FAAD Service.")
         else:
-            faad_cmd = ["python3", "tests/faad_service.py"]
+            faad_cmd = ["python3", "hybrid_prototype/faad_service.py"]
             print(f"[Orchestrator] Starting FAAD Microservice: {' '.join(faad_cmd)}")
             faad_proc = subprocess.Popen(
                 faad_cmd,

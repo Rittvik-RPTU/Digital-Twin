@@ -24,30 +24,31 @@ class FuzzyTrustEngine:
         self.trust_index = ctrl.Consequent(np.arange(0, 1.01, 0.01), 'trust_index')
 
         # 2. Define Membership Functions
-        # Z-Score sets: Low (0-2), Medium (2-4), High (>4)
-        self.z_score['low'] = fuzz.zmf(self.z_score.universe, 1.5, 3.0)
-        self.z_score['medium'] = fuzz.gaussmf(self.z_score.universe, 3.0, 0.8)
-        self.z_score['high'] = fuzz.smf(self.z_score.universe, 3.0, 5.0)
+        # Z-Score sets: Normal (0-2), Suspect (1-3), Anomalous (>2)
+        self.z_score['normal'] = fuzz.zmf(self.z_score.universe, 1.0, 2.0)
+        self.z_score['suspect'] = fuzz.trimf(self.z_score.universe, [1.0, 2.0, 3.0])
+        self.z_score['anomalous'] = fuzz.smf(self.z_score.universe, 2.0, 3.0)
 
-        # IF-Score sets: Normal (0-0.5), Suspect (0.4-0.7), Anomalous (>0.6)
+        # IF-Score sets: Normal (low anomaly score), Anomalous (high anomaly score)
         self.if_score['normal'] = fuzz.zmf(self.if_score.universe, 0.4, 0.6)
-        self.if_score['suspect'] = fuzz.gaussmf(self.if_score.universe, 0.55, 0.1)
-        self.if_score['anomalous'] = fuzz.smf(self.if_score.universe, 0.5, 0.7)
+        self.if_score['anomalous'] = fuzz.smf(self.if_score.universe, 0.4, 0.6)
 
-        # Trust Index sets: Critical (0-0.3), Warning (0.3-0.7), OK (0.7-1.0)
-        self.trust_index['critical'] = fuzz.zmf(self.trust_index.universe, 0.2, 0.4)
-        self.trust_index['warning'] = fuzz.gaussmf(self.trust_index.universe, 0.5, 0.15)
-        self.trust_index['ok'] = fuzz.smf(self.trust_index.universe, 0.6, 0.8)
+        # Trust Index sets: Low (centroid 0.1), Low-Medium (centroid 0.3), Medium (centroid 0.5), High (centroid 0.9)
+        self.trust_index['low'] = fuzz.trimf(self.trust_index.universe, [0.0, 0.1, 0.25])
+        self.trust_index['low_medium'] = fuzz.trimf(self.trust_index.universe, [0.15, 0.3, 0.45])
+        self.trust_index['medium'] = fuzz.trimf(self.trust_index.universe, [0.35, 0.5, 0.65])
+        self.trust_index['high'] = fuzz.trimf(self.trust_index.universe, [0.75, 0.9, 1.0])
 
         # 3. Define Fuzzy Rules
-        rule1 = ctrl.Rule(self.z_score['low'] & self.if_score['normal'], self.trust_index['ok'])
-        rule2 = ctrl.Rule(self.z_score['medium'] & self.if_score['normal'], self.trust_index['warning'])
-        rule3 = ctrl.Rule(self.z_score['high'] | self.if_score['anomalous'], self.trust_index['critical'])
-        rule4 = ctrl.Rule(self.z_score['low'] & self.if_score['suspect'], self.trust_index['warning'])
-        rule5 = ctrl.Rule(self.z_score['medium'] & self.if_score['suspect'], self.trust_index['critical'])
+        rule1 = ctrl.Rule(self.z_score['anomalous'] & self.if_score['anomalous'], self.trust_index['low'])
+        rule2 = ctrl.Rule(self.z_score['suspect'] & self.if_score['anomalous'], self.trust_index['low'])
+        rule3 = ctrl.Rule(self.z_score['anomalous'] & self.if_score['normal'], self.trust_index['low_medium'])
+        rule4 = ctrl.Rule(self.z_score['normal'] & self.if_score['anomalous'], self.trust_index['medium'])
+        rule5 = ctrl.Rule(self.z_score['suspect'] & self.if_score['normal'], self.trust_index['medium'])
+        rule6 = ctrl.Rule(self.z_score['normal'] & self.if_score['normal'], self.trust_index['high'])
 
         # 4. Build Control System
-        self.trust_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5])
+        self.trust_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6])
         self.trust_sim = ctrl.ControlSystemSimulation(self.trust_ctrl)
 
     def evaluate(self, z_val, if_val):
