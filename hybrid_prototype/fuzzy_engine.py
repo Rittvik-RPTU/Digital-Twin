@@ -67,7 +67,7 @@ if __name__ == "__main__":
     # 1. Load/Generate Data Dynamically (Randomized on each run)
     try:
         from data_generator import generate_telemetry_data
-        df = generate_telemetry_data(randomize=True)
+        df = generate_telemetry_data(randomize=False)
         df.to_csv("telemetry_dataset.csv", index=False)
     except Exception as e:
         print(f"Warning: Could not generate data dynamically ({e}). Loading fallback CSV.")

@@ -62,12 +62,16 @@ def generate_telemetry_data(num_samples=500, randomize=False):
     speed[400:500] = 50 + np.sin(time_steps[400:500] / 10) * 10 + np.random.normal(0, 2, 100)
     temperature[400:500] = 40 + (speed[400:500] * 0.3) + np.random.normal(0, 1.5, 100)
 
+    # Add split column to indicate which rows are used for training
+    split = ['Train'] * 150 + ['Test'] * (num_samples - 150)
+
     # Combine into DataFrame
     df = pd.DataFrame({
         'time': time_steps,
         'speed': speed,
         'temperature': temperature,
-        'label': labels
+        'label': labels,
+        'split': split
     })
     
     return df
