@@ -102,10 +102,10 @@ def main():
 
         # =====================================================================
         # CASE 1: Hard Bounds (Layer A) Violation
-        # Temp = 130.0°C (Max allowed in SysML model: 120.0°C)
+        # Speed = 265 km/h (Max allowed in SysML model: 250 km/h)
         # =====================================================================
         print("\n" + "-"*60)
-        print("[CASE 1] Out-of-Bounds Check (Temp = 130.0°C)")
+        print("[CASE 1] Out-of-Bounds Check (Speed = 265 km/h)")
         print("-"*60)
         client1 = create_mqtt_client("client-case1-bounds-fail")
         client1.username_pw_set("admin", "admin")
@@ -121,7 +121,7 @@ def main():
         client1.loop_start()
         time.sleep(0.5)
 
-        payload_c1 = {"airTemperature": 130.0, "rotationalSpeed": 1543.0, "torque": 39.4}
+        payload_c1 = {"temperature": 30.0, "speed": 265.0, "chargeLevel": 70.0}
         print(f"[Client 1] Publishing: {payload_c1}")
         client1.publish(topic, json.dumps(payload_c1))
         time.sleep(2.0)
@@ -130,10 +130,10 @@ def main():
 
         # =====================================================================
         # CASE 2: Statistical Anomaly (Layer B / FAAD) Violation
-        # Temp = 45.0°C (In-bounds for Layer A, but anomalous for FAAD)
+        # Temp = 115.0°C (In-bounds for Layer A [0, 120], but highly anomalous for FAAD)
         # =====================================================================
         print("\n" + "-"*60)
-        print("[CASE 2] Statistical Anomaly Check (Temp = 45.0°C)")
+        print("[CASE 2] Statistical Anomaly Check (Temp = 115.0°C)")
         print("-"*60)
         client2 = create_mqtt_client("client-case2-faad-fail")
         client2.username_pw_set("admin", "admin")
@@ -149,7 +149,7 @@ def main():
         client2.loop_start()
         time.sleep(0.5)
 
-        payload_c2 = {"airTemperature": 45.0, "rotationalSpeed": 1543.0, "torque": 39.4}
+        payload_c2 = {"temperature": 115.0, "speed": 0.0, "chargeLevel": 80.0}
         print(f"[Client 2] Publishing: {payload_c2}")
         client2.publish(topic, json.dumps(payload_c2))
         time.sleep(2.0)
@@ -158,10 +158,10 @@ def main():
 
         # =====================================================================
         # CASE 3: Valid Telemetry (Both Layers Pass)
-        # Temp = 25.7°C (Normal operating conditions for UCI dataset)
+        # Temp = 35.0°C, Speed = 55.0 km/h, SoC = 75.0% (Normal conditions)
         # =====================================================================
         print("\n" + "-"*60)
-        print("[CASE 3] Valid Telemetry Check (Temp = 25.7°C)")
+        print("[CASE 3] Valid Telemetry Check (Temp = 35.0°C, Speed = 55.0 km/h)")
         print("-"*60)
         client3 = create_mqtt_client("client-case3-success")
         client3.username_pw_set("admin", "admin")
@@ -178,7 +178,7 @@ def main():
         client3.loop_start()
         time.sleep(0.5)
 
-        payload_c3 = {"airTemperature": 25.7, "rotationalSpeed": 1543.0, "torque": 39.4}
+        payload_c3 = {"temperature": 35.0, "speed": 55.0, "chargeLevel": 75.0}
         print(f"[Client 3] Publishing: {payload_c3}")
         client3.publish(topic, json.dumps(payload_c3))
         time.sleep(2.0)

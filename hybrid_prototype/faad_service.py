@@ -82,6 +82,9 @@ def evaluate_fuzzy_logic(z_max, if_score):
     return numerator / denominator
 
 class FAADRequestHandler(BaseHTTPRequestHandler):
+    def address_string(self):
+        return self.client_address[0]
+
     def _send_json(self, status, data):
         self.send_response(status)
         self.send_header('Content-Type', 'application/json')
@@ -98,14 +101,14 @@ class FAADRequestHandler(BaseHTTPRequestHandler):
                 payload = data.get("payload", {})
                 
                 # Extract telemetry fields and fill missing with historical averages
-                temp = float(payload.get("airTemperature", means["airTemperature"]))
-                spd = float(payload.get("rotationalSpeed", means["rotationalSpeed"]))
-                chg = float(payload.get("torque", means["torque"]))
+                temp = float(payload.get("temperature", means["temperature"]))
+                spd = float(payload.get("speed", means["speed"]))
+                chg = float(payload.get("chargeLevel", means["chargeLevel"]))
                 
                 # 1. Z-Score Calculation
-                z_temp = abs(temp - means["airTemperature"]) / stds["airTemperature"]
-                z_spd = abs(spd - means["rotationalSpeed"]) / stds["rotationalSpeed"]
-                z_chg = abs(chg - means["torque"]) / stds["torque"]
+                z_temp = abs(temp - means["temperature"]) / stds["temperature"]
+                z_spd = abs(spd - means["speed"]) / stds["speed"]
+                z_chg = abs(chg - means["chargeLevel"]) / stds["chargeLevel"]
                 z_max = max(z_temp, z_spd, z_chg)
                 
                 # 2. Isolation Forest Evaluation
@@ -121,7 +124,7 @@ class FAADRequestHandler(BaseHTTPRequestHandler):
                     "isolation_forest_score": if_score
                 }
                 
-                print(f"[FAAD Service] Evaluated payload: AirTemp={temp:.1f}, RotSpeed={spd:.1f}, Torque={chg:.1f} "
+                print(f"[FAAD Service] Evaluated payload: Temp={temp:.1f}, Speed={spd:.1f}, Charge={chg:.1f} "
                       f"-> Z_max={z_max:.2f}, IF_score={if_score:.3f} -> Trust={trust_index:.3f}")
                       
                 self._send_json(200, response_data)
@@ -132,9 +135,17 @@ class FAADRequestHandler(BaseHTTPRequestHandler):
         else:
             self._send_json(404, {"error": "Not Found"})
 
+class FastThreadingHTTPServer(ThreadingHTTPServer):
+    def server_bind(self):
+        import socketserver
+        socketserver.TCPServer.server_bind(self)
+        host, port = self.server_address[:2]
+        self.server_name = host
+        self.server_port = port
+
 def run(port=8089):
     server_address = ('', port)
-    httpd = ThreadingHTTPServer(server_address, FAADRequestHandler)
+    httpd = FastThreadingHTTPServer(server_address, FAADRequestHandler)
     print(f"[FAAD Service] Starting fuzzy anomaly detection service on port {port}...")
     httpd.serve_forever()
 

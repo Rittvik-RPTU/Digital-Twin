@@ -9,21 +9,25 @@ from fuzzy_engine import FuzzyTrustEngine
 
 # --- Configuration ---
 BROKER_HOST = "localhost"
-TOPIC = "990e8400-e29b-41d4-a716-999999999999/sensor-01/telemetry"
+TOPIC = "92717667-9ced-4ccb-a7be-54936e0f950f/sensor-01/telemetry"
 MQTT_USER = os.environ.get("DT_USERNAME", "testuser")
 MQTT_PASS = os.environ.get("DT_PASSWORD", "testpass")
 
 # --- Initialize FAAD Pipeline ---
 print("[Layer B] Initializing Live FAAD Pipeline...")
-z_monitor = ZScoreMonitor(window_size=30)
+z_temp_monitor = ZScoreMonitor(window_size=30)
+z_spd_monitor = ZScoreMonitor(window_size=30)
+z_chg_monitor = ZScoreMonitor(window_size=30)
 if_monitor = IsolationForestMonitor(contamination=0.02)
 fuzzy_engine = FuzzyTrustEngine()
 
 # Pre-train the IF Monitor on the baseline data
-csv_path = "telemetry_dataset.csv"
+dir_path = os.path.dirname(os.path.abspath(__file__))
+csv_path = os.path.join(dir_path, "telemetry_dataset.csv")
 if os.path.exists(csv_path):
     df = pd.read_csv(csv_path)
-    baseline_data = df.iloc[0:150][['speed', 'temperature']].values.tolist()
+    train_df = df[df['split'] == 'Train']
+    baseline_data = train_df[['temperature', 'speed', 'chargeLevel']].values.tolist()
     if_monitor.train(baseline_data)
 else:
     print(f"Warning: {csv_path} not found. IF Monitor will not be trained.")
@@ -41,11 +45,16 @@ def on_message(client, userdata, msg):
         payload = json.loads(msg.payload.decode())
         temp = float(payload.get("temperature", 0))
         speed = float(payload.get("speed", 0))
+        charge = float(payload.get("chargeLevel", 0))
         
         # Process through Layer B pipeline
-        z = z_monitor.process(temp)
-        i_f = if_monitor.score(speed, temp)
-        trust = fuzzy_engine.evaluate(z, i_f)
+        z_t = z_temp_monitor.process(temp)
+        z_s = z_spd_monitor.process(speed)
+        z_c = z_chg_monitor.process(charge)
+        z_max = max(z_t, z_s, z_c)
+        
+        i_f = if_monitor.score(temp, speed, charge)
+        trust = fuzzy_engine.evaluate(z_max, i_f)
         
         # Determine status for printing
         status = "🟢 OK"
@@ -54,7 +63,7 @@ def on_message(client, userdata, msg):
         elif trust < 0.7:
             status = "🟡 WARNING (Suspicious)"
             
-        print(f"[Layer B] RX: temp={temp:5.1f} | speed={speed:5.1f} || Z-Score: {z:4.1f} | IF: {i_f:4.2f} || Trust: {trust:4.2f} -> {status}")
+        print(f"[Layer B] RX: temp={temp:5.1f} | speed={speed:5.1f} | charge={charge:5.1f} || Z-Score: {z_max:4.1f} | IF: {i_f:4.2f} || Trust: {trust:4.2f} -> {status}")
         
     except Exception as e:
         print(f"[Layer B] Error processing message: {e}")

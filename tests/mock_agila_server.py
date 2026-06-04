@@ -19,11 +19,11 @@ BOUNDS_MODELS = {
         "stealthLevel": {"min": 0.0, "max": 10.0, "unit": "level"},
         "altitude": {"min": 0.0, "max": 50000.0, "unit": "meters"}
     },
-    # University Project - Milling Machine Attributes
+    # University Project - Electric Car Attributes
     "92717667-9ced-4ccb-a7be-54936e0f950f": {
-        "airTemperature": {"min": 0.0, "max": 120.0, "unit": "°C"},
-        "rotationalSpeed": {"min": 0.0, "max": 3000.0, "unit": "rpm"},
-        "torque": {"min": 0.0, "max": 100.0, "unit": "Nm"}
+        "temperature": {"min": 0.0, "max": 120.0, "unit": "°C"},
+        "speed": {"min": 0.0, "max": 250.0, "unit": "km/h"},
+        "chargeLevel": {"min": 0.0, "max": 100.0, "unit": "%"}
     },
     # University Project - Electric Car Attributes
     "048a7077-dc4b-4554-ac65-efa62270f878": {
@@ -185,6 +185,9 @@ USER_PROJECT_OWNERSHIP = {
 # 4. Request Handler
 
 class MockSysMLHandler(BaseHTTPRequestHandler):
+
+    def address_string(self):
+        return self.client_address[0]
 
     def _generate_attribute_usage_elements(self, project_id):
         """Generate AttributeUsage elements from BOUNDS_MODELS.
@@ -377,7 +380,15 @@ class MockSysMLHandler(BaseHTTPRequestHandler):
         self._send_json(200, {})
 
 
-def run(server_class=ThreadingHTTPServer, handler_class=MockSysMLHandler, port=8088):
+class FastThreadingHTTPServer(ThreadingHTTPServer):
+    def server_bind(self):
+        import socketserver
+        socketserver.TCPServer.server_bind(self)
+        host, port = self.server_address[:2]
+        self.server_name = host
+        self.server_port = port
+
+def run(server_class=FastThreadingHTTPServer, handler_class=MockSysMLHandler, port=8088):
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
     print(f"Starting simulated SysML v2 mock server on port {port}...")

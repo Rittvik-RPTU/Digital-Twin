@@ -53,15 +53,15 @@
       }
     },
     "92717667-9ced-4ccb-a7be-54936e0f950f": {
-      "airTemperature": {
+      "temperature": {
         "min": 0.0,
         "max": 120.0
       },
-      "rotationalSpeed": {
+      "speed": {
         "min": 0.0,
-        "max": 3000.0
+        "max": 250.0
       },
-      "torque": {
+      "chargeLevel": {
         "min": 0.0,
         "max": 100.0
       }
