@@ -11,3 +11,4 @@ CMakePresets.json
 /tests/verify_security.py
 **/__pycache__/
 *.pyc
+pt_api_keys.plaintext.json

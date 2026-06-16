@@ -26,7 +26,8 @@ target_link_libraries(DigitalTwinServer
         DigitalTwinLib
         CPSBaseLib
         sysmllib::sysmllib
-        mqtt_cpp::mqtt_cpp)
+        mqtt_cpp::mqtt_cpp
+        OpenSSL::Crypto)
 
 
 file(GLOB_RECURSE _source_list *.cpp* *.h* *.hpp*)

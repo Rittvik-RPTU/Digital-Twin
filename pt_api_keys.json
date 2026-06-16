@@ -1,25 +1,25 @@
 {
-    "sk-pt-a1b2c3d4": {
+    "0d8c0226e3e5eed71539f7b1ef01f7823043b5604d2fe5ae8fed416900eeceae": {
         "device_id": "motor-1",
         "project": "990e8400-e29b-41d4-a716-999999999999"
     },
-    "sk-pt-e5f6g7h8": {
+    "e483f67f025406c56320943992bc257f023122859a86b5255887c85c2a530560": {
         "device_id": "sensor-2",
         "project": "990e8400-e29b-41d4-a716-999999999999"
     },
-    "pt-secret-key-01": {
+    "810aa1e6f2d79e090dee6292f39f3632578857cc3fff52e4a1d28b190609889c": {
         "device_id": "sensor-01",
         "project": "990e8400-e29b-41d4-a716-999999999999"
     },
-    "sk-pt-univ-01": {
+    "47312dca88fe8451d9510094f0366c129a11164af50dda7e526029662ca7bc52": {
         "device_id": "sensor-01",
         "project": "048a7077-dc4b-4554-ac65-efa62270f878"
     },
-    "sk-pt-univ-car-01": {
+    "c584a12451a782bc1609d8d64c8fbc92f7ee336a55745fd75d4fd4e2bf46f5a8": {
         "device_id": "sensor-01",
         "project": "8d8ca656-b014-4168-b9a6-aee066b798c2"
     },
-    "sk-pt-univ-mycar-01": {
+    "4d55cc6a18b7c66beff44e3ea7fb33a06f9b085f62cbb1b04f6344ef7a4a99e9": {
         "device_id": "sensor-01",
         "project": "92717667-9ced-4ccb-a7be-54936e0f950f"
     }

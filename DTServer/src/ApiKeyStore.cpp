@@ -3,8 +3,29 @@
 #include <iostream>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <openssl/evp.h>
+#include <iomanip>
+#include <sstream>
 
 namespace DIGITAL_TWIN_SERVER {
+
+    static std::string computeSHA256(const std::string& unhashed) {
+        EVP_MD_CTX* context = EVP_MD_CTX_new();
+        const EVP_MD* md = EVP_sha256();
+        unsigned char hash[EVP_MAX_MD_SIZE];
+        unsigned int lengthOfHash = 0;
+
+        EVP_DigestInit_ex(context, md, nullptr);
+        EVP_DigestUpdate(context, unhashed.c_str(), unhashed.length());
+        EVP_DigestFinal_ex(context, hash, &lengthOfHash);
+        EVP_MD_CTX_free(context);
+
+        std::stringstream ss;
+        for (unsigned int i = 0; i < lengthOfHash; ++i) {
+            ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+        }
+        return ss.str();
+    }
 
     ApiKeyStore::ApiKeyStore() {
         loadKeys("pt_api_keys.json");
@@ -37,7 +58,8 @@ namespace DIGITAL_TWIN_SERVER {
         // Reload for dynamic updates
         loadKeys("pt_api_keys.json");
 
-        auto it = _deviceAcls.find(apiKey);
+        std::string hashedKey = computeSHA256(apiKey);
+        auto it = _deviceAcls.find(hashedKey);
         if (it != _deviceAcls.end()) {
             outPrincipal.id = it->second.deviceId;
             outPrincipal.authorizedProjectIds = { it->second.projectId };

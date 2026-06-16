@@ -13,6 +13,7 @@ find_package(mqtt_cpp REQUIRED)
 find_package(Qt6 REQUIRED)
 find_package(md4c REQUIRED)
 find_package(Threads REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 
 include(CMakeDependentOption)
