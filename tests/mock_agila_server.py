@@ -5,9 +5,37 @@ from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
 
 import os
 
+def load_sysml_bounds(filepath):
+    bounds = {}
+    try:
+        with open(filepath, 'r') as f:
+            content = f.read()
+        attr_blocks = re.finditer(r'attribute\s+(\w+)\s*:\s*Real\s*\{([^}]+)\}', content)
+        for block in attr_blocks:
+            attr_name = block.group(1)
+            body = block.group(2)
+            min_val = 0.0
+            max_val = 100.0
+            min_m = re.search(r'(?:lowerBound|min|low)\s*:\s*Real\s*:=\s*([-\d.]+)', body)
+            if min_m:
+                min_val = float(min_m.group(1))
+            max_m = re.search(r'(?:upperBound|max|high)\s*:\s*Real\s*:=\s*([-\d.]+)', body)
+            if max_m:
+                max_val = float(max_m.group(1))
+            bounds[attr_name] = {"min": min_val, "max": max_val}
+    except Exception as e:
+        print(f"Failed to load bounds from {filepath}: {e}")
+    return bounds
+
 # 1. Define Bounds Model for Payload Validation
 
+VEHICLE_PROJECT_ID = "222e8400-e29b-41d4-a716-222222222222"
+VEHICLE_BRANCH_ID = "333e8400-e29b-41d4-a716-333333333333"
+VEHICLE_COMMIT_ID = "444e8400-e29b-41d4-a716-444444444444"
+
 BOUNDS_MODELS = {
+    # Dynamically loaded bounds from sysml file
+    VEHICLE_PROJECT_ID: load_sysml_bounds(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "vehicle_bounds.sysml")),
     # Test/Standard User Project - Electric Car Attributes
     "990e8400-e29b-41d4-a716-999999999999": {
         "temperature": {"min": 0.0, "max": 120.0, "unit": "°C"},
@@ -86,6 +114,13 @@ DB = {
             "name": "Standard_User_Project",
             "description": "Public research data",
             "defaultBranch": {"@id": TEST_BRANCH_ID, "@type": "Branch", "name": "main"}
+        },
+        VEHICLE_PROJECT_ID: {
+            "@id": VEHICLE_PROJECT_ID,
+            "@type": "Project",
+            "name": "Vehicle_Validation_Project",
+            "description": "Project with dynamically loaded sysml bounds",
+            "defaultBranch": {"@id": VEHICLE_BRANCH_ID, "@type": "Branch", "name": "main"}
         }
     },
     "branches": {
@@ -104,6 +139,14 @@ DB = {
                 "name": "main",
                 "head": {"@id": TEST_COMMIT_ID, "@type": "Commit"}
             }
+        ],
+        VEHICLE_PROJECT_ID: [
+            {
+                "@id": VEHICLE_BRANCH_ID,
+                "@type": "Branch",
+                "name": "main",
+                "head": {"@id": VEHICLE_COMMIT_ID, "@type": "Commit"}
+            }
         ]
     },
     "commits": {
@@ -112,6 +155,9 @@ DB = {
         ],
         TEST_PROJECT_ID: [
             {"@id": TEST_COMMIT_ID, "@type": "Commit", "message": "Initial testuser commit"}
+        ],
+        VEHICLE_PROJECT_ID: [
+            {"@id": VEHICLE_COMMIT_ID, "@type": "Commit", "message": "Dynamic bounds commit"}
         ]
     },
     "elements": {
