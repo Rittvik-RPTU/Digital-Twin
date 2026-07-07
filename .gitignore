@@ -8,7 +8,10 @@
 CMakeUserPresets.json
 CMakePresets.json
 .DS_Store
+**/.DS_Store
 /tests/verify_security.py
 **/__pycache__/
 *.pyc
 pt_api_keys.plaintext.json
+/DigitalTwinLib/resources/grammars/.antlr
+/config.cfg
