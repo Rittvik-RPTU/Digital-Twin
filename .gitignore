@@ -15,3 +15,5 @@ CMakePresets.json
 pt_api_keys.plaintext.json
 /DigitalTwinLib/resources/grammars/.antlr
 /config.cfg
+.cache/
+compile_commands.json
