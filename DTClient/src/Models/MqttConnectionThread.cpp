@@ -70,12 +70,16 @@ namespace DigitalTwin::Client {
     }
 
     void MQTTConnectionThread::publish(std::string topic, std::string value) {
-        std::cout << "Sending message..." << std::endl;
-        std::cout << topic << std::endl << value;
-        mqtt::message_ptr pubmsg = mqtt::make_message(topic, value);
-        pubmsg->set_qos(QUALITY_OF_SERVICE);
-        const auto resultPublish = Client.publish(pubmsg, nullptr, SendingListener);
-        std::cout << "  ...OK" << std::endl;
+        try {
+            std::cout << "Sending message..." << std::endl;
+            std::cout << topic << std::endl << value << std::endl;
+            mqtt::message_ptr pubmsg = mqtt::make_message(topic, value);
+            pubmsg->set_qos(QUALITY_OF_SERVICE);
+            const auto resultPublish = Client.publish(pubmsg, nullptr, SendingListener);
+            std::cout << "  ...OK" << std::endl;
+        } catch (const std::exception& e) {
+            std::cerr << "[MQTTClient] Failed to publish message: " << e.what() << std::endl;
+        }
     }
 
     void MQTTConnectionThread::onConnect() {

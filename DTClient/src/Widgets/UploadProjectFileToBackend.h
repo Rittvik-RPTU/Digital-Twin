@@ -46,12 +46,12 @@ namespace DigitalTwin::Client {
     private slots:
         void onTextEdited();
         void onCreateDigitalTwinClicked();
+        void createOnlineProject();
 
     private:
         void makeConnections();
         void setMarkdownOfOnlineProject(QString Markdown);
         void setCodeElements();
-        void createOnlineProject();
         void redecorateWithStatusChange();
 
         std::vector<std::shared_ptr<KerML::Entities::Element>> Elements;
