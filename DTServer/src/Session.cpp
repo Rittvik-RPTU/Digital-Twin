@@ -30,7 +30,8 @@ namespace DIGITAL_TWIN_SERVER
         _stopped = true;
         _subscriptionStorage.removeAll(shared_from_this());
         boost::system::error_code ec;
-        ServerEndpoint->lowest_layer().close(ec);
+        auto close_result = ServerEndpoint->lowest_layer().close(ec);
+        (void)close_result;
     }
 
     void Session::recv_connect() {
