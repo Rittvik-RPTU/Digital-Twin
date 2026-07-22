@@ -5,8 +5,8 @@ import sys
 
 def create_mqtt_client(client_id):
     try:
-        return mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, client_id=client_id, protocol=mqtt.MQTTv5)
-    except AttributeError:
+        return mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=client_id, protocol=mqtt.MQTTv5)
+    except (AttributeError, ValueError):
         return mqtt.Client(client_id=client_id, protocol=mqtt.MQTTv5)
 
 def main():
@@ -25,12 +25,24 @@ def main():
     client = create_mqtt_client("manual-test-publisher")
     client.username_pw_set("admin", "admin")
 
-    def on_disconnect(client, userdata, rc, properties=None):
+    def on_disconnect(client, userdata, *args, **kwargs):
+        # Support both CallbackAPIVersion.VERSION1 and VERSION2 signatures cleanly
+        properties = kwargs.get('properties', None)
+        rc = 0
+        if len(args) == 1:
+            rc = args[0]
+        elif len(args) >= 2:
+            rc = args[1]
+            if len(args) >= 3 and properties is None:
+                properties = args[2]
+
         reason_detail = ""
         if properties and hasattr(properties, "ReasonString") and properties.ReasonString:
             reason_detail = str(properties.ReasonString)
         
-        if rc != 0 or reason_detail:
+        rc_val = getattr(rc, 'value', rc)
+
+        if rc_val != 0 or reason_detail:
             print(f"\n[Client] ✗ Disconnected by Broker!")
             if "Layer A" in reason_detail:
                 print(f"[Client] Rejection Reason: REJECTED BY LAYER A (SysML v2 Model Bounds Violation). Details: '{reason_detail}'")
@@ -39,7 +51,7 @@ def main():
             elif reason_detail:
                 print(f"[Client] Rejection Reason: {reason_detail}")
             else:
-                print(f"[Client] Rejection Reason: Disconnected with Return Code {rc}")
+                print(f"[Client] Rejection Reason: Disconnected with Return Code {rc_val}")
         else:
             print("\n[Client] Gracefully disconnected.")
 
