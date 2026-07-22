@@ -23,11 +23,11 @@ namespace PHYSICAL_TWIN_COMMUNICATION {
 namespace DigitalTwin::Client {
 	class MQTTActionListener : public mqtt::iaction_listener {
 		// Geerbt über iaction_listener
-		void on_failure(const mqtt::token& asyncActionToken) override {
+		void on_failure(const mqtt::token& /*asyncActionToken*/) override {
 			qDebug() << "Message not successfully delivered";
 		}
 
-		void on_success(const mqtt::token& asyncActionToken) override {
+		void on_success(const mqtt::token& /*asyncActionToken*/) override {
 			qDebug() << "Message successully delivered";
 		}
 	};
@@ -61,6 +61,8 @@ namespace DigitalTwin::Client {
 		boost::asio::io_context* IoC;
 		std::thread mqttClientThread;
 		mqtt::async_client Client;
+		std::string username;
+		std::string password;
 	};
 }
 

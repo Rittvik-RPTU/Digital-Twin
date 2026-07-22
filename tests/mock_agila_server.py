@@ -251,7 +251,7 @@ class MockSysMLHandler(BaseHTTPRequestHandler):
 
         for attr_name, bounds_info in BOUNDS_MODELS[project_id].items():
             element = {
-                "@id": f"{element_id_base}400-e29b-41d4-a716-00000000000{counter}",
+                "@id": f"{element_id_base}-e29b-41d4-a716-00000000000{counter}",
                 "@type": "TextualRepresentation",
                 "kind": "AttributeUsage",
                 "name": attr_name,
@@ -260,7 +260,7 @@ class MockSysMLHandler(BaseHTTPRequestHandler):
                 "lowerBound": bounds_info["min"],
                 "upperBound": bounds_info["max"],
                 "unit": bounds_info.get("unit", ""),
-                "body": f"attribute {attr_name} : Real;",
+                "body": f"attribute {attr_name} : Real {{\n    attribute lowerBound : Real := {bounds_info['min']};\n    attribute upperBound : Real := {bounds_info['max']};\n}}",
                 "language": "SysML"
             }
             elements.append(element)
@@ -417,7 +417,10 @@ class MockSysMLHandler(BaseHTTPRequestHandler):
                 username, password = '', ''
 
             if username in VALID_USERS and VALID_USERS[username] == password:
-                self._send_json(200, {"barrierString": f"mock-token-{username}"})
+                self._send_json(200, {
+                    "barrierString": f"mock-token-{username}",
+                    "bearer": f"mock-token-{username}"
+                })
             else:
                 self._send_json(401, {"error": "Invalid credentials"})
             return

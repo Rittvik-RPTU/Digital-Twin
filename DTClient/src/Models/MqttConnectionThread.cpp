@@ -10,7 +10,8 @@
 namespace DigitalTwin::Client {
 
     MQTTConnectionThread::MQTTConnectionThread(std::string url, std::string port, std::string username, std::string password) :
-    Client(mqtt::async_client(url + ":" + port, "digital-twin-client"))
+    Client(mqtt::async_client(url + ":" + port, "digital-twin-client")),
+    username(username), password(password)
     {
 
 
@@ -29,6 +30,8 @@ namespace DigitalTwin::Client {
             return;
 
         auto connOpts = mqtt::connect_options_builder::v5()
+            .user_name(username)
+            .password(password)
             .keep_alive_interval(std::chrono::seconds(30))
             .clean_session(false)
             .automatic_reconnect()
@@ -36,18 +39,22 @@ namespace DigitalTwin::Client {
 
         mqttClientThread = std::thread([this, connOpts]()
         {
-        	Client.start_consuming();
-            std::cout << "Connecting to the MQTT server..." << std::endl;
-            auto tok = Client.connect(connOpts);
-            auto rsp = tok->get_connect_response();
+            try {
+                // Client.start_consuming(); // Commented out to prevent conflicts with callbacks
+                std::cout << "Connecting to the MQTT server..." << std::endl;
+                auto tok = Client.connect(connOpts);
+                auto rsp = tok->get_connect_response();
 
-            if (!rsp.is_session_present()) {
-                std::cout << "  No session present on server. Subscribing..." << std::endl;
-                //Client.subscribe(TOPIC, QOS)->wait();
+                if (!rsp.is_session_present()) {
+                    std::cout << "  No session present on server. Subscribing..." << std::endl;
+                    //Client.subscribe(TOPIC, QOS)->wait();
+                }
+                std::cout << "OK" << std::endl;
+            } catch (const mqtt::exception& exc) {
+                std::cerr << "MQTT connection failed: " << exc.what() << std::endl;
             }
-            std::cout << "OK" << std::endl;
-
         });
+        mqttClientThread.detach();
         
 
         //mqttClientThread = std::thread([this]() {

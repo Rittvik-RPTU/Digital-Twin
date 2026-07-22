@@ -207,7 +207,8 @@ namespace DIGITAL_TWIN_SERVER
                                           << " on topic " << topic << " — disconnecting.\n";
 
                                 async_mqtt::v5::disconnect_packet dp{
-                                    async_mqtt::disconnect_reason_code::payload_format_invalid
+                                    async_mqtt::disconnect_reason_code::payload_format_invalid,
+                                    { async_mqtt::property::reason_string{"Rejected by Layer A: SysML v2 Hard Bounds Violation"} }
                                 };
                                 self->ServerEndpoint->async_send(dp, [self](async_mqtt::error_code const&) { self->stop(); });
                                 return;
@@ -229,7 +230,8 @@ namespace DIGITAL_TWIN_SERVER
                                               << " on topic " << topic << " — disconnecting.\n";
 
                                     async_mqtt::v5::disconnect_packet dp{
-                                        async_mqtt::disconnect_reason_code::payload_format_invalid
+                                        async_mqtt::disconnect_reason_code::payload_format_invalid,
+                                        { async_mqtt::property::reason_string{"Rejected by Layer B: FAAD Statistical Anomaly"} }
                                     };
                                     self->ServerEndpoint->async_send(dp, [self](async_mqtt::error_code const&) { self->stop(); });
                                     return;

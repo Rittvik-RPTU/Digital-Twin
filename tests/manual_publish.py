@@ -11,13 +11,14 @@ def create_mqtt_client(client_id):
 
 def main():
     parser = argparse.ArgumentParser(description="Publish custom telemetry to the C++ Broker.")
-    parser.add_argument("--temp", type=float, required=True, help="Temperature value in °C")
-    parser.add_argument("--speed", type=float, default=100.0, help="Speed value in km/h (default: 100.0)")
-    parser.add_argument("--charge", type=float, default=75.0, help="Charge level in %% (default: 75.0)")
+    parser.add_argument("--temp", type=float, required=True, help="Temperature value")
+    parser.add_argument("--speed", type=float, default=100.0, help="Speed value")
+    parser.add_argument("--charge", type=float, default=75.0, help="Charge level")
+    parser.add_argument("--project", type=str, default="222e8400-e29b-41d4-a716-222222222222", help="Project UUID (default: Vehicle Validation)")
     
     args = parser.parse_args()
 
-    project_id = "990e8400-e29b-41d4-a716-999999999999"
+    project_id = args.project
     device_id = "device123"
     topic = f"{project_id}/{device_id}/telemetry"
 
@@ -25,9 +26,20 @@ def main():
     client.username_pw_set("admin", "admin")
 
     def on_disconnect(client, userdata, rc, properties=None):
-        if rc != 0:
-            print(f"\n[Client] ✗ Disconnected by Broker! Reason/Return Code: {rc}")
-            print("[Client] This indicates the payload was REJECTED by either Layer A (bounds) or Layer B (FAAD).")
+        reason_detail = ""
+        if properties and hasattr(properties, "ReasonString") and properties.ReasonString:
+            reason_detail = str(properties.ReasonString)
+        
+        if rc != 0 or reason_detail:
+            print(f"\n[Client] ✗ Disconnected by Broker!")
+            if "Layer A" in reason_detail:
+                print(f"[Client] Rejection Reason: REJECTED BY LAYER A (SysML v2 Model Bounds Violation). Details: '{reason_detail}'")
+            elif "Layer B" in reason_detail:
+                print(f"[Client] Rejection Reason: REJECTED BY LAYER B (FAAD Statistical Anomaly). Details: '{reason_detail}'")
+            elif reason_detail:
+                print(f"[Client] Rejection Reason: {reason_detail}")
+            else:
+                print(f"[Client] Rejection Reason: Disconnected with Return Code {rc}")
         else:
             print("\n[Client] Gracefully disconnected.")
 

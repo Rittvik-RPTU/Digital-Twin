@@ -79,7 +79,7 @@ namespace DigitalTwin::Model {
     std::vector<Component *> Component::getAllComponents() {
         std::vector<Component*> components;
 
-        for(auto element : ComponentMap)
+        for(const auto& element : ComponentMap)
             components.push_back(element.second);
 
         return components;
@@ -104,7 +104,7 @@ namespace DigitalTwin::Model {
     {
         std::vector<Port*> ports;
 
-        for (auto element : PortMap)
+        for (const auto& element : PortMap)
             ports.push_back(element.second);
 
         return ports;
@@ -117,10 +117,10 @@ namespace DigitalTwin::Model {
             for(const auto& string : dynamic_cast<Component*>(comp.second)->getAllMQTTTopics())
                 returnValue.push_back(comp.first + "/" + string);
 
-        for(auto element : Controllables)
+        for(const auto& element : Controllables)
             returnValue.push_back(element.first);
 
-        for(auto element : Measurables)
+        for(const auto& element : Measurables)
             returnValue.push_back(element.first);
 
         return returnValue;
@@ -130,16 +130,16 @@ namespace DigitalTwin::Model {
     {
         auto comp = new Component(name);
         
-        for (const auto [name, component] : ComponentMap)
+        for (const auto& [name, component] : ComponentMap)
             comp->appendComponent(component->instantiate(name));
 
-        for (auto [_, controllable] : Controllables)
+        for (const auto& [_, controllable] : Controllables)
             comp->appendControllable(controllable->copy());
 
-        for (auto [_, measurable] : Measurables)
+        for (const auto& [_, measurable] : Measurables)
             comp->appendMeasurable(measurable);
 
-        for (auto [_, attribute] : Attributes)
+        for (const auto& [_, attribute] : Attributes)
             comp->appendMeasurable(attribute);
 
         return comp;
@@ -171,7 +171,7 @@ namespace DigitalTwin::Model {
 
     Variable* Component::resolveVariable(std::vector<std::string> domains, int index)
     {
-        if (index >= domains.size())
+        if (static_cast<size_t>(index) >= domains.size())
             throw DigitalTwinAddressException();
 
         if ((size_t)index == (domains.size()-1))

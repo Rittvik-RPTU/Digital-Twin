@@ -13,6 +13,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <nlohmann/json.hpp>
 #include <curl/curl.h>
+#include <regex>
 
 namespace DIGITAL_TWIN_SERVER
 {
@@ -100,6 +101,14 @@ namespace DIGITAL_TWIN_SERVER
 		if (kind) {
 			if (kind->find("AttributeUsage") != std::string::npos ||
 			    kind->find("attribute") != std::string::npos) {
+				return true;
+			}
+		}
+
+		// Check if body text contains attribute definition (e.g. "attribute speed : Real")
+		auto body = elementJson.get_optional<std::string>("body");
+		if (body && !body->empty()) {
+			if (body->find("attribute ") != std::string::npos) {
 				return true;
 			}
 		}
@@ -204,6 +213,33 @@ namespace DIGITAL_TWIN_SERVER
 						          << "': [" << minVal << ", " << maxVal << "]\n";
 					}
 				}
+			}
+		}
+
+		// Strategy 5: SysML v2 Metamodel Property Tree Traversal (ownedFeature / ownedMember)
+		if (!found) {
+			for (const auto& childPair : elementJson) {
+				const auto& child = childPair.second;
+				auto childName = child.get_optional<std::string>("name");
+				if (!childName) childName = child.get_optional<std::string>("declaredName");
+
+				if (childName) {
+					if (*childName == "lowerBound" || *childName == "min") {
+						auto val = child.get_optional<double>("lowerBound");
+						if (!val) val = child.get_optional<double>("value");
+						if (val) minVal = *val;
+					}
+					if (*childName == "upperBound" || *childName == "max") {
+						auto val = child.get_optional<double>("upperBound");
+						if (!val) val = child.get_optional<double>("value");
+						if (val) maxVal = *val;
+					}
+				}
+			}
+			if (minVal != -1.0 && maxVal != -1.0) {
+				found = true;
+				std::cout << "[AuthService][Bounds][DEBUG] Found metamodel property tree bounds for '" << elementName
+				          << "': [" << minVal << ", " << maxVal << "]\n";
 			}
 		}
 
