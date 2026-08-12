@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include <string>
+#include <vector>
+#include <map>
 #include "IDigitalTwinElement.h"
 #include "../../cpp_digital_twin_lib_global.h"
 
@@ -9,7 +11,7 @@ namespace DigitalTwin::Model {
 	class Component;
 	class Variable;
     /**
-     * @class 
+     * @class ICollectionType
      * @author Moritz Herzog
      * @version 1.0
      * This Class represents the BaseClass of the Elements of the Digital Twin.
@@ -36,7 +38,14 @@ namespace DigitalTwin::Model {
         virtual void appendMeasurable(Variable* variable) = 0;
 
         virtual Variable* resolveVariable(std::string name) = 0;
-        virtual Variable* resolveVariable(std::vector<std::string> domains, int index) = 0;
+        virtual Variable* resolveVariable(std::vector<std::string> domains, size_t index) = 0;
+
+    protected:
+    	std::map<std::string, Component*> ComponentMap;
+    	std::map<std::string, Port*> PortMap;
+    	std::map<std::string, Variable*> Controllables;
+    	std::map<std::string, Variable*> Measurables;
+    	std::map<std::string, Variable*> Attributes;
         
     };
 }

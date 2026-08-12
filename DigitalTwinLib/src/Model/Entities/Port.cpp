@@ -53,7 +53,7 @@ namespace DigitalTwin::Model {
         return resolveVariable(splittedAdress, 0);
     }
 
-    Variable* Port::resolveVariable(std::vector<std::string> domains, int index)
+    Variable* Port::resolveVariable(std::vector<std::string> domains, size_t index)
     {
         if (static_cast<size_t>(index) >= domains.size())
             throw DigitalTwinAddressException();

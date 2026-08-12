@@ -11,6 +11,7 @@ namespace DigitalTwin::Model {
 	class Variable;
 	class Port;
 
+
 	class Package : public ICollectionType
 	{
 	public:
@@ -29,7 +30,7 @@ namespace DigitalTwin::Model {
 		Component* getComponentDefinition(std::string name);
 		Port* getPort(std::string name);
 		Variable* resolveVariable(std::string name) override;
-		Variable* resolveVariable(std::vector<std::string> domains, int index) override;
+		Variable* resolveVariable(std::vector<std::string> domains, size_t index) override;
 		Variable* getMeasurable(std::string name);
 		Variable* getControllable(std::string name);
 		Component* getIndividualInstance(std::string name);
@@ -39,9 +40,6 @@ namespace DigitalTwin::Model {
 	private:
 		std::map<std::string, Component*> ComponentDefinitions;
 		std::map<std::string, Port*> PortDefinitions;
-		std::map<std::string, Variable*> Attributes;
-		std::map<std::string, Variable*> Measurables;
-		std::map<std::string, Variable*> Controllables;
 		std::map<std::string, Component*> IndividualInstances;
 	};
 }
