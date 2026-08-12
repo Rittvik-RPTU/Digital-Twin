@@ -11,7 +11,7 @@ namespace DigitalTwin::Model
     class Function : public IDigitalTwinElement
     {
     public:
-        Function() = default;
+        Function() = delete;
 
         explicit Function(const std::string& name);
 

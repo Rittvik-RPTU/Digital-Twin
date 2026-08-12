@@ -68,7 +68,7 @@ namespace DIGITAL_TWIN_SERVER {
                 // In a production system, this would be a hash of the binary signed by a TPM/HSM
                 std::string payload = "{\"status\":\"ok\", \"integrity_token\":\"MASTER_THESIS_SECURE_DT\"}";
                 
-                _subscriptionStorage.forEachMatch("dt/system/integrity", nullptr, [&](std::shared_ptr<Session> s) {
+                _subscriptionStorage.forEachMatch("dt/system/integrity", nullptr, [&](Session* s) {
                     s->send_qos0_publish("dt/system/integrity", payload);
                 });
 

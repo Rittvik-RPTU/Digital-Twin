@@ -21,14 +21,14 @@ namespace DIGITAL_TWIN_SERVER
 
     void Session::start() {
         auto self = shared_from_this();
-        _subscriptionStorage.add(self,"",false);
+        _subscriptionStorage.add(self.get(),"",false);
         recv_connect();
     }
 
     void Session::stop() {
         if (_stopped) return;
         _stopped = true;
-        _subscriptionStorage.removeAll(shared_from_this());
+        _subscriptionStorage.removeAll(this);
         boost::system::error_code ec;
         auto close_result = ServerEndpoint->lowest_layer().close(ec);
         (void)close_result;
@@ -133,7 +133,7 @@ namespace DIGITAL_TWIN_SERVER
                         if (self->_authService.canSubscribe(self->_principal, filter)) {
                             reasons.push_back(async_mqtt::suback_reason_code::granted_qos_0);
                             // Only add authorized subscriptions to the storage
-                            self->_subscriptionStorage.add(self, filter, false);
+                            self->_subscriptionStorage.add(self.get(), filter, false);
                         } else {
                             std::cout << "[Session] SUBSCRIBE denied: " << self->_principal.id
                                       << " cannot subscribe to " << filter << "\n";
@@ -245,7 +245,7 @@ namespace DIGITAL_TWIN_SERVER
                     std::cout << "PUBLISH topic=" << topic
                               << " payload_bytes=" << payload.size() << "\n";
 
-                    self->_subscriptionStorage.forEachMatch(topic, self, [topic, payload](std::shared_ptr<Session> s) {
+                    self->_subscriptionStorage.forEachMatch(topic, self.get(), [topic, payload](Session* s) {
                         s->send_qos0_publish(topic, payload);
                     });
                 },
