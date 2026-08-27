@@ -28,6 +28,16 @@
             "projects": [
                 "abcd1234-e29b-41d4-a716-446655449999"
             ]
+        },
+        "testuser1": {
+            "projects": [
+                "daa5c27c-c6d1-4d4d-b39a-43add4970964"
+            ]
+        },
+        "testuser2": {
+            "projects": [
+                "7221179a-a09d-4f32-93b0-dd5e4d50d3e7"
+            ]
         }
     }
 }
