@@ -215,7 +215,7 @@ namespace DIGITAL_TWIN_SERVER
                                 return;
                             }
 
-                            // --- Data-Validation Layer B: Statistical Anomaly Detection (FAAD) ---
+                            // --- Data-Validation Layer B: Statistical Anomaly Detection (VFAAD) ---
                             // Extract deviceId from topic: expected format "projectId/deviceId/telemetry"
                             std::string deviceId = "";
                             auto secondSlashPos = topic.find('/', slashPos + 1);
@@ -232,7 +232,7 @@ namespace DIGITAL_TWIN_SERVER
 
                                     async_mqtt::v5::disconnect_packet dp{
                                         async_mqtt::disconnect_reason_code::payload_format_invalid,
-                                        { async_mqtt::property::reason_string{"Rejected by Layer B: FAAD Statistical Anomaly"} }
+                                        { async_mqtt::property::reason_string{"Rejected by Layer B: VFAAD Statistical Anomaly"} }
                                     };
                                     self->ServerEndpoint->async_send(dp, [self](async_mqtt::error_code const&) { self->stop(); });
                                     return;

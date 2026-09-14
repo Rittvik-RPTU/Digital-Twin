@@ -50,12 +50,12 @@ def main():
             processes.append(("Mock Agila", mock_server_proc))
             time.sleep(1.0)
 
-        # 2. FAAD Microservice (port 8089)
+        # 2. VFAAD Microservice (port 8089)
         if is_port_in_use(8089):
-            print("[Orchestrator] Port 8089 is already in use. Reusing existing FAAD Service.")
+            print("[Orchestrator] Port 8089 is already in use. Reusing existing VFAAD Service.")
         else:
             faad_cmd = ["python3", "hybrid_prototype/faad_service.py"]
-            print(f"[Orchestrator] Starting FAAD Microservice: {' '.join(faad_cmd)}")
+            print(f"[Orchestrator] Starting VFAAD Microservice: {' '.join(faad_cmd)}")
             faad_proc = subprocess.Popen(
                 faad_cmd,
                 cwd=base_dir,
@@ -63,7 +63,7 @@ def main():
                 stderr=subprocess.PIPE,
                 text=True
             )
-            processes.append(("FAAD Service", faad_proc))
+            processes.append(("VFAAD Service", faad_proc))
             time.sleep(1.0)
 
         # 3. C++ DigitalTwinServer Broker (port 1883)
@@ -129,20 +129,20 @@ def main():
         client1.disconnect()
 
         # =====================================================================
-        # CASE 2: Statistical Anomaly (Layer B / FAAD) Violation
-        # Temp = 115.0°C (In-bounds for Layer A [0, 120], but highly anomalous for FAAD)
+        # CASE 2: Statistical Anomaly (Layer B / VFAAD) Violation
+        # Temp = 115.0°C (In-bounds for Layer A [0, 120], but highly anomalous for VFAAD)
         # =====================================================================
         print("\n" + "-"*60)
         print("[CASE 2] Statistical Anomaly Check (Temp = 115.0°C)")
         print("-"*60)
-        client2 = create_mqtt_client("client-case2-faad-fail")
+        client2 = create_mqtt_client("client-case2-vfaad-fail")
         client2.username_pw_set("admin", "admin")
 
         def on_disconnect_c2(client, userdata, rc, properties=None):
             print(f"[Client 2] Disconnected from broker (rc={rc})")
             if rc != 0:
                 results["case2_layer_b_rejected"] = True
-                print("[Client 2][SUCCESS] Connection closed as expected due to FAAD anomaly rejection.")
+                print("[Client 2][SUCCESS] Connection closed as expected due to VFAAD anomaly rejection.")
 
         client2.on_disconnect = on_disconnect_c2
         client2.connect("localhost", 1883)
@@ -220,7 +220,7 @@ def main():
         print("\n" + "="*80)
         print(" FINAL DUAL-LAYER SECURITY TEST RESULTS:")
         print(f" Case 1 (Layer A Violation Rejected):  {results['case1_layer_a_rejected']}")
-        print(f" Case 2 (Layer B/FAAD Anomaly Rejected): {results['case2_layer_b_rejected']}")
+        print(f" Case 2 (Layer B/VFAAD Anomaly Rejected): {results['case2_layer_b_rejected']}")
         print(f" Case 3 (Normal Telemetry Accepted):    {results['case3_both_accepted']}")
         print("="*80)
 

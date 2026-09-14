@@ -47,7 +47,7 @@ def main():
             if "Layer A" in reason_detail:
                 print(f"[Client] Rejection Reason: REJECTED BY LAYER A (SysML v2 Model Bounds Violation). Details: '{reason_detail}'")
             elif "Layer B" in reason_detail:
-                print(f"[Client] Rejection Reason: REJECTED BY LAYER B (FAAD Statistical Anomaly). Details: '{reason_detail}'")
+                print(f"[Client] Rejection Reason: REJECTED BY LAYER B (VFAAD Statistical Anomaly). Details: '{reason_detail}'")
             elif reason_detail:
                 print(f"[Client] Rejection Reason: {reason_detail}")
             else:

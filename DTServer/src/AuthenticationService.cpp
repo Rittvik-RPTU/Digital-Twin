@@ -729,23 +729,23 @@ bool AuthenticationService::verifyStatisticalPayload(
   std::string responseString;
   CURLcode res = performCurlRequest(responseString);
 
-  // If FAAD service is not running on port 8089, automatically launch it and
+  // If VFAAD service is not running on port 8089, automatically launch it and
   // retry!
   if (res == CURLE_COULDNT_CONNECT || res == CURLE_FAILED_INIT) {
-    std::cout << "[AuthService][Layer B] FAAD microservice is not active on "
-                 "port 8089. Auto-starting FAAD pipeline service...\n";
+    std::cout << "[AuthService][Layer B] VFAAD microservice is not active on "
+                 "port 8089. Auto-starting VFAAD pipeline service...\n";
     int sysRes = std::system(
         "python3 hybrid_prototype/faad_service.py > /dev/null 2>&1 &");
     (void)sysRes;
 
-    // Poll FAAD service until port 8089 is bound and responding (up to 5
+    // Poll VFAAD service until port 8089 is bound and responding (up to 5
     // retries x 500ms = 2.5s)
     for (int retry = 0; retry < 5; ++retry) {
       std::this_thread::sleep_for(std::chrono::milliseconds(500));
       responseString.clear();
       res = performCurlRequest(responseString);
       if (res == CURLE_OK) {
-        std::cout << "[AuthService][Layer B] ✓ FAAD service auto-started "
+        std::cout << "[AuthService][Layer B] ✓ VFAAD service auto-started "
                      "successfully on port 8089.\n";
         break;
       }

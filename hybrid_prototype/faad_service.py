@@ -5,7 +5,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import os
 
-# Load the trained FAAD model
+# Load the trained VFAAD model
 dir_path = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.join(dir_path, "faad_model.pkl")
 try:
@@ -14,13 +14,13 @@ try:
         clf = model_data["isolation_forest"]
         means = model_data["means"]
         stds = model_data["stds"]
-        print(f"[FAAD Service] Successfully loaded model data from {model_path}")
+        print(f"[VFAAD Service] Successfully loaded model data from {model_path}")
 except Exception as e:
-    print(f"[FAAD Service] Error loading model: {e}")
+    print(f"[VFAAD Service] Error loading model: {e}")
     exit(1)
 
-def evaluate_fuzzy_logic(z_max, if_score):
-    # 1. Fuzzification for Z-Score
+def evaluate_value_fusion(z_max, if_score):
+    # 1. Membership Mapping for Z-Score
     # Normal Z-Score membership
     if z_max <= 1.0:
         z_normal = 1.0
@@ -45,7 +45,7 @@ def evaluate_fuzzy_logic(z_max, if_score):
     else:
         z_anomalous = 1.0
 
-    # 2. Fuzzification for Isolation Forest score (normal is >= 0, anomaly is negative)
+    # 2. Membership Mapping for Isolation Forest score (normal is >= 0, anomaly is negative)
     # Normal membership
     if if_score >= 0.0:
         if_normal = 1.0
@@ -62,7 +62,7 @@ def evaluate_fuzzy_logic(z_max, if_score):
     else:
         if_anomalous = 0.0
 
-    # 3. Rule Evaluation & Defuzzification (Weighted Average Method)
+    # 3. Rule Evaluation & Fusion Aggregation (Weighted Average Method)
     # Output Centroids: Low = 0.1, Medium = 0.5, High = 0.9
     rules = [
         (min(z_anomalous, if_anomalous), 0.1), # Rule 1: Both anomalous -> Low trust
@@ -81,7 +81,7 @@ def evaluate_fuzzy_logic(z_max, if_score):
     
     return numerator / denominator
 
-class FAADRequestHandler(BaseHTTPRequestHandler):
+class VFAADRequestHandler(BaseHTTPRequestHandler):
     def address_string(self):
         return self.client_address[0]
 
@@ -115,8 +115,8 @@ class FAADRequestHandler(BaseHTTPRequestHandler):
                 sample = np.array([[temp, spd, chg]])
                 if_score = float(clf.decision_function(sample)[0])
                 
-                # 3. Fuzzy Logic Fusion
-                trust_index = evaluate_fuzzy_logic(z_max, if_score)
+                # 3. Value Fusion
+                trust_index = evaluate_value_fusion(z_max, if_score)
                 
                 response_data = {
                     "trust_index": trust_index,
@@ -124,13 +124,13 @@ class FAADRequestHandler(BaseHTTPRequestHandler):
                     "isolation_forest_score": if_score
                 }
                 
-                print(f"[FAAD Service] Evaluated payload: Temp={temp:.1f}, Speed={spd:.1f}, Charge={chg:.1f} "
+                print(f"[VFAAD Service] Evaluated payload: Temp={temp:.1f}, Speed={spd:.1f}, Charge={chg:.1f} "
                       f"-> Z_max={z_max:.2f}, IF_score={if_score:.3f} -> Trust={trust_index:.3f}")
                       
                 self._send_json(200, response_data)
                 
             except Exception as e:
-                print(f"[FAAD Service] Error processing request: {e}")
+                print(f"[VFAAD Service] Error processing request: {e}")
                 self._send_json(400, {"error": str(e)})
         else:
             self._send_json(404, {"error": "Not Found"})
@@ -145,8 +145,8 @@ class FastThreadingHTTPServer(ThreadingHTTPServer):
 
 def run(port=8089):
     server_address = ('', port)
-    httpd = FastThreadingHTTPServer(server_address, FAADRequestHandler)
-    print(f"[FAAD Service] Starting fuzzy anomaly detection service on port {port}...")
+    httpd = FastThreadingHTTPServer(server_address, VFAADRequestHandler)
+    print(f"[VFAAD Service] Starting value fusion anomaly detection service on port {port}...")
     httpd.serve_forever()
 
 if __name__ == '__main__':

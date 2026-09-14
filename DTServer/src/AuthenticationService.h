@@ -106,7 +106,7 @@ namespace DIGITAL_TWIN_SERVER
 
 		/**
 		 * Data-Validation Layer B : Verifies an incoming MQTT telemetry payload against
-		 * statistical models via the FAAD microservice.
+		 * statistical models via the VFAAD microservice.
 		 *
 		 * @param projectId  The project UUID.
 		 * @param deviceId   The device ID.

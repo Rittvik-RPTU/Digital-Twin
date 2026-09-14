@@ -5,7 +5,7 @@ import pandas as pd
 import time
 from z_score_monitor import ZScoreMonitor
 from if_monitor import IsolationForestMonitor
-from fuzzy_engine import FuzzyTrustEngine
+from value_fusion_engine import ValueFusionTrustEngine
 
 # --- Configuration ---
 BROKER_HOST = "localhost"
@@ -13,13 +13,13 @@ TOPIC = "92717667-9ced-4ccb-a7be-54936e0f950f/sensor-01/telemetry"
 MQTT_USER = os.environ.get("DT_USERNAME", "testuser")
 MQTT_PASS = os.environ.get("DT_PASSWORD", "testpass")
 
-# --- Initialize FAAD Pipeline ---
-print("[Layer B] Initializing Live FAAD Pipeline...")
+# --- Initialize VFAAD Pipeline ---
+print("[Layer B] Initializing Live VFAAD Pipeline...")
 z_temp_monitor = ZScoreMonitor(window_size=30)
 z_spd_monitor = ZScoreMonitor(window_size=30)
 z_chg_monitor = ZScoreMonitor(window_size=30)
 if_monitor = IsolationForestMonitor(contamination=0.02)
-fuzzy_engine = FuzzyTrustEngine()
+fusion_engine = ValueFusionTrustEngine()
 
 # Pre-train the IF Monitor on the baseline data
 dir_path = os.path.dirname(os.path.abspath(__file__))
@@ -54,7 +54,7 @@ def on_message(client, userdata, msg):
         z_max = max(z_t, z_s, z_c)
         
         i_f = if_monitor.score(temp, speed, charge)
-        trust = fuzzy_engine.evaluate(z_max, i_f)
+        trust = fusion_engine.evaluate(z_max, i_f)
         
         # Determine status for printing
         status = "🟢 OK"
