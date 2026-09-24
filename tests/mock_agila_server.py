@@ -115,11 +115,18 @@ DB = {
             "description": "Public research data",
             "defaultBranch": {"@id": TEST_BRANCH_ID, "@type": "Branch", "name": "main"}
         },
+        "048a7077-dc4b-4554-ac65-efa62270f878": {
+            "@id": "048a7077-dc4b-4554-ac65-efa62270f878",
+            "@type": "Project",
+            "name": "NumericalFunctions.kerml",
+            "description": "KerML Numerical Standard Library",
+            "defaultBranch": {"@id": "048a7077-1111-2222-3333-666666666666", "@type": "Branch", "name": "main"}
+        },
         VEHICLE_PROJECT_ID: {
             "@id": VEHICLE_PROJECT_ID,
             "@type": "Project",
-            "name": "Vehicle_Validation_Project",
-            "description": "Project with dynamically loaded sysml bounds",
+            "name": "ElectricCarDT",
+            "description": "Electric Car Digital Twin Project with dynamically loaded SysML bounds",
             "defaultBranch": {"@id": VEHICLE_BRANCH_ID, "@type": "Branch", "name": "main"}
         }
     },
