@@ -1,19 +1,63 @@
-**/.vscode**
-**/build**
-**/build/**
-**/CMakeUserPresets.json
-**/3rd_party_conanpackages/**
-.idea/**
-**/cmake-**/**
-CMakeUserPresets.json
-CMakePresets.json
+# ============================================================
+# Digital-Twin .gitignore
+# ============================================================
+
+# macOS & OS artifacts
 .DS_Store
 **/.DS_Store
-/tests/verify_security.py
-**/__pycache__/
-*.pyc
-pt_api_keys.plaintext.json
-/DigitalTwinLib/resources/grammars/.antlr
-/config.cfg
-.cache/
+*.swp
+*~
+
+# IDE & Editor Configurations
+.vscode/
+**/.vscode/**
+.idea/
+**/.idea/**
+*.sublime-project
+*.sublime-workspace
+
+# CMake & Build Artifacts
+build/
+**/build/**
+cmake-build-*/
+**/cmake-build-*/**
+CMakeUserPresets.json
+CMakePresets.json
 compile_commands.json
+out/
+**/out/**
+bin/
+lib/
+
+# Conan Package Manager Artifacts
+conan.lock
+conaninfo.txt
+conanbuildinfo.*
+3rd_party_conanpackages/
+**/3rd_party_conanpackages/**
+
+# Python & Testing Caches
+__pycache__/
+**/__pycache__/**
+*.py[cod]
+*$py.class
+.pytest_cache/
+**/.pytest_cache/**
+.coverage
+htmlcov/
+*.egg-info/
+.cache/
+**/.cache/**
+
+# ANTLR Generated Files
+/DigitalTwinLib/resources/grammars/.antlr
+
+# Secrets & Local Configurations (DO NOT COMMIT PLAINTEXT KEYS)
+pt_api_keys.plaintext.json
+**/pt_api_keys.plaintext.json
+config.cfg
+*.local.json
+
+# Scratch & Temporary Test Files
+/tests/verify_security.py
+test_results.txt
