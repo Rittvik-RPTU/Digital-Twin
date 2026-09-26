@@ -165,11 +165,11 @@ if __name__ == "__main__":
     
     # Value Fusion Trust Index
     ax3.plot(df['time'], df['trust_index'], label='Trust Index', color='purple', linewidth=2)
-    ax3.axhline(y=0.3, color='red', linestyle='--', label='CRITICAL Block Threshold (0.3)')
-    ax3.axhline(y=0.7, color='orange', linestyle='--', label='WARNING Threshold (0.7)')
-    ax3.fill_between(df['time'], 0, 0.3, color='red', alpha=0.1)
-    ax3.fill_between(df['time'], 0.3, 0.7, color='orange', alpha=0.1)
-    ax3.fill_between(df['time'], 0.7, 1.0, color='green', alpha=0.1)
+    ax3.axhline(y=0.35, color='red', linestyle='--', label='CRITICAL Block Threshold (0.35)')
+    ax3.axhline(y=0.70, color='orange', linestyle='--', label='WARNING Threshold (0.70)')
+    ax3.fill_between(df['time'], 0, 0.35, color='red', alpha=0.1)
+    ax3.fill_between(df['time'], 0.35, 0.70, color='orange', alpha=0.1)
+    ax3.fill_between(df['time'], 0.70, 1.0, color='green', alpha=0.1)
     ax3.set_title("3. Value Fusion Trust Engine Output (Decision Fusion)")
     ax3.set_xlabel("Time Steps")
     ax3.set_ylabel("Trust Level (0 to 1)")
@@ -184,7 +184,7 @@ if __name__ == "__main__":
                  arrowprops=dict(facecolor='black', shrink=0.08, width=1, headwidth=6),
                  ha='center', fontsize=9, bbox=dict(boxstyle="round,pad=0.3", fc="yellow", alpha=0.5))
                  
-    # Anomaly 2: t = 800 to 830. Trust drops to <0.3 (Critical Block)
+    # Anomaly 2: t = 800 to 830. Trust drops to <0.35 (Critical Block)
     trust_a2_min_idx = df.loc[800:830, 'trust_index'].idxmin()
     trust_a2_min_val = df.loc[trust_a2_min_idx, 'trust_index']
     ax3.annotate('Anomaly 2: Temp Spike\nTrust Index drops (Critical)', 
@@ -192,7 +192,7 @@ if __name__ == "__main__":
                  arrowprops=dict(facecolor='black', shrink=0.08, width=1, headwidth=6),
                  ha='center', fontsize=9, bbox=dict(boxstyle="round,pad=0.3", fc="yellow", alpha=0.5))
                  
-    # Anomaly 3: t = 850 to 860. Trust drops to <0.3 (Critical Block)
+    # Anomaly 3: t = 850 to 860. Trust drops to <0.35 (Critical Block)
     trust_a3_min_idx = df.loc[850:860, 'trust_index'].idxmin()
     trust_a3_min_val = df.loc[trust_a3_min_idx, 'trust_index']
     ax3.annotate('Anomaly 3: Speed Spike\nTrust Index drops (Critical)', 
